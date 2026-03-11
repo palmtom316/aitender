@@ -1,0 +1,15 @@
+{
+  "provider": "mineru",
+  "markdown_text": "# 1 General\nSample clause",
+  "layout_payload": {
+    "pages": [
+      {
+        "page": 1,
+        "text": "1 General Sample clause"
+      }
+    ]
+  },
+  "metadata": {
+    "source_path": "/tmp/mineru/norm.pdf"
+  }
+}

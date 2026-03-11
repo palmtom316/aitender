@@ -1,0 +1,14 @@
+{
+  "provider": "commercial",
+  "markdown": "# 2 Scope\nCommercial sample",
+  "pages": [
+    {
+      "page_number": 2,
+      "content": "2 Scope Commercial sample"
+    }
+  ],
+  "meta": {
+    "source_path": "/tmp/commercial/norm.pdf",
+    "trace_id": "trace-1"
+  }
+}

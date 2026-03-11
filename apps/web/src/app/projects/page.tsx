@@ -1,3 +1,5 @@
+import React from "react";
+
 import { ProjectList } from "../../components/projects/project-list";
 
 const demoProjects = [

@@ -1,3 +1,5 @@
+import React from "react";
+
 type ProjectSummary = {
   id: string;
   name: string;

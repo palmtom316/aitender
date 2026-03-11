@@ -31,7 +31,9 @@ export default async function LibraryPage({ params }: LibraryPageProps) {
 
   const activeDocument = documents[0];
   const bundle = await getNormDocumentBundle(projectId, activeDocument.id);
-  const job = await getProcessingJobStatus(activeDocument.id);
+  const job = activeDocument.latestJobId
+    ? await getProcessingJobStatus(activeDocument.latestJobId)
+    : null;
   if (!bundle) {
     return (
       <main>

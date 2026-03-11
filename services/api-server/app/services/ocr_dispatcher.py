@@ -50,7 +50,19 @@ class OCRDispatcher:
             message=f"Started OCR processing with {provider_name}",
         )
 
-        adapter = self._adapters[provider_name]
+        adapter = self._adapters.get(provider_name)
+        if adapter is None:
+            error_message = f"Unsupported OCR provider: {provider_name}"
+            job.status = NormProcessingJobStatus.FAILED
+            job.error_message = error_message
+            self._audit.record(
+                job_id=job.id,
+                step="ocr_failed",
+                message=error_message,
+                level="error",
+            )
+            return job, None
+
         try:
             result = adapter.extract(document_path)
         except Exception as exc:

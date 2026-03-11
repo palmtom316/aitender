@@ -6,10 +6,19 @@ import type { ProcessingJobView } from "../../lib/api/norms";
 import { ErrorState } from "./error-state";
 
 type JobStatusPanelProps = {
-  job: ProcessingJobView;
+  job: ProcessingJobView | null;
 };
 
 export function JobStatusPanel({ job }: JobStatusPanelProps) {
+  if (!job) {
+    return (
+      <section aria-label="Processing status">
+        <h2>Processing status</h2>
+        <p>No processing job has been started yet.</p>
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Processing status">
       <h2>Processing status</h2>

@@ -5,7 +5,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node ./scripts/run-vitest.mjs"
+    "test": "node ./scripts/run-vitest.mjs",
+    "test:e2e": "node ./scripts/run-vitest.mjs e2e"
   },
   "dependencies": {
     "next": "15.5.4",

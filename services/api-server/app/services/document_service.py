@@ -27,6 +27,19 @@ class DocumentService:
     def document_count(self) -> int:
         return len(self._documents)
 
+    def get_document(self, document_id: str) -> Document | None:
+        for document in self._documents:
+            if document.id == document_id:
+                return document
+        return None
+
+    def update_status(self, document_id: str, status_value: str) -> Document | None:
+        document = self.get_document(document_id)
+        if document is None:
+            return None
+        document.status = status_value
+        return document
+
     def create_upload(
         self,
         *,

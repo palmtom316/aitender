@@ -106,3 +106,33 @@ def test_job_status_endpoint_returns_failure_reason_and_error_log(tmp_path: Path
         "message": "failed to parse broken.pdf",
         "level": "error",
     }
+
+
+def test_unknown_provider_transitions_job_to_failed_and_records_audit(tmp_path: Path):
+    source_file = tmp_path / "unknown-provider.pdf"
+    source_file.write_bytes(b"%PDF-1.7 sample")
+
+    job, result = ocr_dispatcher.process_document(
+        document_id="doc-3",
+        document_path=source_file,
+        provider_name="unknown-provider",
+    )
+    client = TestClient(app)
+
+    response = client.get(f"/jobs/{job.id}")
+
+    assert result is None
+    assert response.status_code == 200
+    assert response.json()["job"] == {
+        "id": job.id,
+        "document_id": "doc-3",
+        "provider_name": "unknown-provider",
+        "status": "failed",
+        "error_message": "Unsupported OCR provider: unknown-provider",
+    }
+    assert response.json()["audit_logs"][-1] == {
+        "job_id": job.id,
+        "step": "ocr_failed",
+        "message": "Unsupported OCR provider: unknown-provider",
+        "level": "error",
+    }

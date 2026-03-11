@@ -1,6 +1,7 @@
 export type NormDocument = {
   id: string;
   fileName: string;
+  latestJobId: string | null;
   status: string;
   libraryType: string;
 };
@@ -35,10 +36,23 @@ export type ProcessingJobView = {
   auditSteps: string[];
 };
 
+type ProcessingJobApiResponse = {
+  job: {
+    id: string;
+    provider_name: string;
+    status: "completed" | "failed" | "running";
+    error_message: string | null;
+  };
+  audit_logs: Array<{
+    step: string;
+  }>;
+};
+
 const MOCK_DOCUMENTS: NormDocument[] = [
   {
     id: "doc-1",
     fileName: "grid-standard.pdf",
+    latestJobId: "norm-job-1",
     status: "indexed",
     libraryType: "norm_library"
   }
@@ -107,6 +121,21 @@ const MOCK_RESULTS: NormSearchResult[] = [
   }
 ];
 
+const MOCK_JOB_RESPONSES: Record<string, ProcessingJobApiResponse> = {
+  "norm-job-1": {
+    job: {
+      id: "norm-job-1",
+      provider_name: "mineru",
+      status: "completed",
+      error_message: null,
+    },
+    audit_logs: [
+      { step: "job_started" },
+      { step: "ocr_completed" },
+    ],
+  },
+};
+
 export async function listNormDocuments(_projectId: string): Promise<NormDocument[]> {
   return MOCK_DOCUMENTS;
 }
@@ -155,13 +184,36 @@ export async function searchNorms(options: {
 }
 
 export async function getProcessingJobStatus(
-  _documentId: string
+  jobId: string
 ): Promise<ProcessingJobView> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (baseUrl) {
+    const response = await fetch(`${baseUrl}/jobs/${jobId}`);
+    if (!response.ok) {
+      throw new Error("Failed to load processing job status");
+    }
+
+    return mapProcessingJobResponse(
+      (await response.json()) as ProcessingJobApiResponse
+    );
+  }
+
+  const payload = MOCK_JOB_RESPONSES[jobId];
+  if (!payload) {
+    throw new Error(`Missing mock processing job: ${jobId}`);
+  }
+
+  return mapProcessingJobResponse(payload);
+}
+
+function mapProcessingJobResponse(
+  payload: ProcessingJobApiResponse
+): ProcessingJobView {
   return {
-    id: "norm-job-1",
-    status: "completed",
-    providerName: "mineru",
-    errorMessage: null,
-    auditSteps: ["job_started", "ocr_completed"]
+    id: payload.job.id,
+    status: payload.job.status,
+    providerName: payload.job.provider_name,
+    errorMessage: payload.job.error_message,
+    auditSteps: payload.audit_logs.map((item) => item.step),
   };
 }

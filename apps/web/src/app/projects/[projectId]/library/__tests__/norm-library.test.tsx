@@ -27,6 +27,7 @@ const defaultDocuments = [
   {
     id: "doc-1",
     fileName: "grid-standard.pdf",
+    latestJobId: "norm-job-1",
     status: "indexed",
     libraryType: "norm_library"
   }
@@ -86,6 +87,7 @@ describe("NormLibraryPage", () => {
       })
     );
 
+    expect(getProcessingJobStatusMock).toHaveBeenCalledWith("norm-job-1");
     expect(screen.getByText("grid-standard.pdf")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Search norms"), {

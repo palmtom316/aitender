@@ -6,18 +6,21 @@ import LibraryPage from "../page";
 import NormDocumentPage from "../norms/[documentId]/page";
 import {
   getNormDocumentBundle,
+  getProcessingJobStatus,
   listNormDocuments,
   searchNorms
 } from "../../../../../lib/api/norms";
 
 vi.mock("../../../../../lib/api/norms", () => ({
   getNormDocumentBundle: vi.fn(),
+  getProcessingJobStatus: vi.fn(),
   listNormDocuments: vi.fn(),
   searchNorms: vi.fn()
 }));
 
 const listNormDocumentsMock = vi.mocked(listNormDocuments);
 const getNormDocumentBundleMock = vi.mocked(getNormDocumentBundle);
+const getProcessingJobStatusMock = vi.mocked(getProcessingJobStatus);
 const searchNormsMock = vi.mocked(searchNorms);
 
 const defaultDocuments = [
@@ -66,6 +69,13 @@ describe("NormLibraryPage", () => {
   beforeEach(() => {
     listNormDocumentsMock.mockResolvedValue(defaultDocuments);
     getNormDocumentBundleMock.mockResolvedValue(defaultBundle);
+    getProcessingJobStatusMock.mockResolvedValue({
+      id: "norm-job-1",
+      status: "completed",
+      providerName: "mineru",
+      errorMessage: null,
+      auditSteps: ["job_started", "ocr_completed"]
+    });
     searchNormsMock.mockResolvedValue({ items: defaultBundle.results });
   });
 

@@ -10,6 +10,14 @@ type NormDocumentPageProps = {
 export default async function NormDocumentPage({ params }: NormDocumentPageProps) {
   const { documentId, projectId } = await params;
   const bundle = await getNormDocumentBundle(projectId, documentId);
+  if (!bundle) {
+    return (
+      <main>
+        <h1>Document not found.</h1>
+        <p>Project: {projectId}</p>
+      </main>
+    );
+  }
 
   return (
     <main>

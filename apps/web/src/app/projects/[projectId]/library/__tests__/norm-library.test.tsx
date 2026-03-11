@@ -1,9 +1,74 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { vi } from "vitest";
 
 import LibraryPage from "../page";
+import NormDocumentPage from "../norms/[documentId]/page";
+import {
+  getNormDocumentBundle,
+  listNormDocuments,
+  searchNorms
+} from "../../../../../lib/api/norms";
+
+vi.mock("../../../../../lib/api/norms", () => ({
+  getNormDocumentBundle: vi.fn(),
+  listNormDocuments: vi.fn(),
+  searchNorms: vi.fn()
+}));
+
+const listNormDocumentsMock = vi.mocked(listNormDocuments);
+const getNormDocumentBundleMock = vi.mocked(getNormDocumentBundle);
+const searchNormsMock = vi.mocked(searchNorms);
+
+const defaultDocuments = [
+  {
+    id: "doc-1",
+    fileName: "grid-standard.pdf",
+    status: "indexed",
+    libraryType: "norm_library"
+  }
+];
+
+const defaultBundle = {
+  document: defaultDocuments[0],
+  tree: [
+    {
+      label: "1",
+      title: "General",
+      children: [
+        {
+          label: "1.1",
+          title: "Scope",
+          children: [
+            {
+              label: "1.1.1",
+              title: "Scope clause text that explains the implementation scope."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  results: [
+    {
+      label: "1.1.1",
+      title: "Scope clause text that explains the implementation scope.",
+      pageStart: 2,
+      pageEnd: 2,
+      summaryText: "Scope clause text that explains the implementation scope.",
+      commentarySummary: "Commentary for the scope clause.",
+      pathLabels: ["1", "1.1", "1.1.1"]
+    }
+  ]
+};
 
 describe("NormLibraryPage", () => {
+  beforeEach(() => {
+    listNormDocumentsMock.mockResolvedValue(defaultDocuments);
+    getNormDocumentBundleMock.mockResolvedValue(defaultBundle);
+    searchNormsMock.mockResolvedValue({ items: defaultBundle.results });
+  });
+
   it("shows documents, searches norms, and syncs detail panels from the selected result", async () => {
     render(
       await LibraryPage({
@@ -34,5 +99,51 @@ describe("NormLibraryPage", () => {
       "aria-current",
       "true"
     );
+  });
+
+  it("shows an empty state when the project has no norm documents yet", async () => {
+    listNormDocumentsMock.mockResolvedValueOnce([]);
+
+    render(
+      await LibraryPage({
+        params: Promise.resolve({ projectId: "project-empty" })
+      })
+    );
+
+    expect(screen.getByText("No norm documents uploaded yet.")).toBeInTheDocument();
+  });
+
+  it("shows a not-found state when the requested document bundle is missing", async () => {
+    getNormDocumentBundleMock.mockResolvedValueOnce(null);
+
+    render(
+      await NormDocumentPage({
+        params: Promise.resolve({
+          documentId: "missing-doc",
+          projectId: "project-alpha"
+        })
+      })
+    );
+
+    expect(screen.getByText("Document not found.")).toBeInTheDocument();
+  });
+
+  it("shows a recoverable error when norm search fails", async () => {
+    searchNormsMock.mockRejectedValueOnce(new Error("network down"));
+
+    render(
+      await LibraryPage({
+        params: Promise.resolve({ projectId: "project-alpha" })
+      })
+    );
+
+    fireEvent.change(screen.getByLabelText("Search norms"), {
+      target: { value: "scope" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(
+      await screen.findByText("Failed to load search results.")
+    ).toBeInTheDocument();
   });
 });

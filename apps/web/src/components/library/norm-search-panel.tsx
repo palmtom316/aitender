@@ -23,14 +23,20 @@ export function NormSearchPanel({
   initialResults
 }: NormSearchPanelProps) {
   const [query, setQuery] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<NormSearchResult[]>(initialResults);
   const [selectedResult, setSelectedResult] = useState<NormSearchResult | null>(null);
 
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextResults = await searchNorms({ projectId, documentId, query });
-    setResults(nextResults.items);
-    setSelectedResult(nextResults.items[0] ?? null);
+    try {
+      const nextResults = await searchNorms({ projectId, documentId, query });
+      setErrorMessage(null);
+      setResults(nextResults.items);
+      setSelectedResult(nextResults.items[0] ?? null);
+    } catch {
+      setErrorMessage("Failed to load search results.");
+    }
   }
 
   return (
@@ -45,6 +51,7 @@ export function NormSearchPanel({
         />
         <button type="submit">Search</button>
       </form>
+      {errorMessage ? <p>{errorMessage}</p> : null}
       <div>
         <NormResultList
           onSelect={setSelectedResult}

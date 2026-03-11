@@ -27,6 +27,14 @@ export type NormDocumentBundle = {
   results: NormSearchResult[];
 };
 
+export type ProcessingJobView = {
+  id: string;
+  status: "completed" | "failed" | "running";
+  providerName: string;
+  errorMessage: string | null;
+  auditSteps: string[];
+};
+
 const MOCK_DOCUMENTS: NormDocument[] = [
   {
     id: "doc-1",
@@ -106,8 +114,11 @@ export async function listNormDocuments(_projectId: string): Promise<NormDocumen
 export async function getNormDocumentBundle(
   _projectId: string,
   documentId: string
-): Promise<NormDocumentBundle> {
-  const document = MOCK_DOCUMENTS.find((item) => item.id === documentId) ?? MOCK_DOCUMENTS[0];
+): Promise<NormDocumentBundle | null> {
+  const document = MOCK_DOCUMENTS.find((item) => item.id === documentId);
+  if (!document) {
+    return null;
+  }
 
   return {
     document,
@@ -140,5 +151,17 @@ export async function searchNorms(options: {
 
       return normalizedQuery.split(/\s+/).every((token) => haystack.includes(token));
     })
+  };
+}
+
+export async function getProcessingJobStatus(
+  _documentId: string
+): Promise<ProcessingJobView> {
+  return {
+    id: "norm-job-1",
+    status: "completed",
+    providerName: "mineru",
+    errorMessage: null,
+    auditSteps: ["job_started", "ocr_completed"]
   };
 }

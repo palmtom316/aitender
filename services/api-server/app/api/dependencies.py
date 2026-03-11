@@ -4,6 +4,7 @@ from fastapi import Depends, Header, HTTPException, status
 
 from app.models.user import AuthenticatedUser
 from app.services.auth_service import AuthService, auth_service
+from app.services.document_service import DocumentService, document_service
 from app.services.project_service import ProjectService, project_service
 
 
@@ -13,6 +14,10 @@ def get_auth_service() -> AuthService:
 
 def get_project_service() -> ProjectService:
     return project_service
+
+
+def get_document_service() -> DocumentService:
+    return document_service
 
 
 def get_current_user(

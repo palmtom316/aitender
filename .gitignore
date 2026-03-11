@@ -6,3 +6,6 @@ dist/
 build/
 .idea/
 .vscode/
+.omc/
+*.Zone.Identifier
+*:Zone.Identifier

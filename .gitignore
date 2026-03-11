@@ -7,5 +7,6 @@ build/
 .idea/
 .vscode/
 .omc/
+.worktrees/
 *.Zone.Identifier
 *:Zone.Identifier

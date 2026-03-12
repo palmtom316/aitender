@@ -12,6 +12,9 @@ build/
 .idea/
 .vscode/
 .omc/
+.omx/
 .worktrees/
+.venv-pg/
+tmp/
 *.Zone.Identifier
 *:Zone.Identifier

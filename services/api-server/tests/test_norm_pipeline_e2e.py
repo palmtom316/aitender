@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.services.audit_service import audit_service
 from app.services.document_service import document_service
-from app.services.norm_artifact_normalizer import NormArtifactNormalizer
 from app.services.ocr_dispatcher import ocr_dispatcher
 from app.workers.process_norm_document import process_norm_document
 
@@ -77,23 +76,10 @@ def test_norm_pipeline_e2e_from_upload_to_searchable_result():
     )
     assert raw_result is not None
 
-    normalized = NormArtifactNormalizer().normalize(raw_result)
-    index_preview = client.post(
-        "/norms/index-preview",
-        json={
-            "document_id": document_id,
-            "markdown_text": normalized.markdown_text,
-            "page_texts": [page.model_dump() for page in normalized.page_texts],
-        },
-    )
-    assert index_preview.status_code == 200
-
     search = client.post(
         "/norm-search/query",
         json={
             "document_id": document_id,
-            "clause_index": index_preview.json(),
-            "commentary_result": {"commentary_map": {}},
             "query": "implementation scope",
         },
     )

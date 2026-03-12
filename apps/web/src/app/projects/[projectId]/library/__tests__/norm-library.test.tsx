@@ -8,20 +8,35 @@ import {
   getNormDocumentBundle,
   getProcessingJobStatus,
   listNormDocuments,
-  searchNorms
+  searchNorms,
+  uploadNormDocument
 } from "../../../../../lib/api/norms";
+
+const refreshRouterMock = vi.hoisted(() => vi.fn());
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    refresh: refreshRouterMock
+  })
+}));
+
+vi.mock("../../../../../lib/auth/server-session", () => ({
+  requireAccessToken: vi.fn().mockResolvedValue("auth-token-pm")
+}));
 
 vi.mock("../../../../../lib/api/norms", () => ({
   getNormDocumentBundle: vi.fn(),
   getProcessingJobStatus: vi.fn(),
   listNormDocuments: vi.fn(),
-  searchNorms: vi.fn()
+  searchNorms: vi.fn(),
+  uploadNormDocument: vi.fn()
 }));
 
 const listNormDocumentsMock = vi.mocked(listNormDocuments);
 const getNormDocumentBundleMock = vi.mocked(getNormDocumentBundle);
 const getProcessingJobStatusMock = vi.mocked(getProcessingJobStatus);
 const searchNormsMock = vi.mocked(searchNorms);
+const uploadNormDocumentMock = vi.mocked(uploadNormDocument);
 
 const defaultDocuments = [
   {
@@ -78,6 +93,7 @@ describe("NormLibraryPage", () => {
       auditSteps: ["job_started", "ocr_completed"]
     });
     searchNormsMock.mockResolvedValue({ items: defaultBundle.results });
+    uploadNormDocumentMock.mockResolvedValue(defaultDocuments[0]);
   });
 
   it("shows documents, searches norms, and syncs detail panels from the selected result", async () => {
@@ -87,8 +103,12 @@ describe("NormLibraryPage", () => {
       })
     );
 
-    expect(getProcessingJobStatusMock).toHaveBeenCalledWith("norm-job-1");
-    expect(screen.getByText("grid-standard.pdf")).toBeInTheDocument();
+    expect(getProcessingJobStatusMock).toHaveBeenCalledWith("norm-job-1", {
+      accessToken: "auth-token-pm"
+    });
+    expect(
+      screen.getAllByText("grid-standard.pdf").length
+    ).toBeGreaterThanOrEqual(1);
 
     fireEvent.change(screen.getByLabelText("Search norms"), {
       target: { value: "scope" }

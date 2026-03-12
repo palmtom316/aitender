@@ -1,13 +1,25 @@
-from itertools import count
+from pathlib import Path
+
+from app.repositories.factory import get_audit_log_repository
+from app.repositories.audit_log_repository import AuditLogRepository
+from app.repositories.json_audit_log_repository import JsonAuditLogRepository
 
 
 class AuditService:
-    def __init__(self) -> None:
-        self._id_sequence = count(1)
-        self.reset()
+    def __init__(
+        self,
+        state_path: Path | None = None,
+        repository: AuditLogRepository | None = None,
+    ) -> None:
+        self._repository = (
+            repository
+            or JsonAuditLogRepository(state_path=state_path)
+            if state_path is not None
+            else get_audit_log_repository()
+        )
 
     def reset(self) -> None:
-        self._events: list[dict] = []
+        self._repository.reset()
 
     def record(
         self,
@@ -17,27 +29,15 @@ class AuditService:
         message: str,
         level: str = "info",
     ) -> dict:
-        event = {
-            "id": f"audit-{next(self._id_sequence)}",
-            "job_id": job_id,
-            "step": step,
-            "message": message,
-            "level": level,
-        }
-        self._events.append(event)
-        return event
+        return self._repository.append(
+            job_id=job_id,
+            step=step,
+            message=message,
+            level=level,
+        )
 
     def list_for_job(self, job_id: str) -> list[dict]:
-        return [
-            {
-                "job_id": event["job_id"],
-                "step": event["step"],
-                "message": event["message"],
-                "level": event["level"],
-            }
-            for event in self._events
-            if event["job_id"] == job_id
-        ]
+        return self._repository.list_for_job(job_id)
 
 
-audit_service = AuditService()
+audit_service = AuditService(repository=get_audit_log_repository())

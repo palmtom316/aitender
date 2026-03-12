@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 type ProjectSummary = {
@@ -15,7 +16,9 @@ export function ProjectList({ projects }: ProjectListProps) {
     <ul>
       {projects.map((project) => (
         <li key={project.id}>
-          <strong>{project.name}</strong>
+          <Link href={`/projects/${project.id}/library`}>
+            <strong>{project.name}</strong>
+          </Link>
           <span>{project.memberRole}</span>
         </li>
       ))}

@@ -9,3 +9,5 @@ class Document(BaseModel):
     library_type: str
     uploaded_by: str
     status: str
+    current_version_id: str | None = None
+    latest_job_id: str | None = None

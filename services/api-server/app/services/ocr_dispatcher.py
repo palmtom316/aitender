@@ -1,4 +1,3 @@
-from itertools import count
 from pathlib import Path
 
 from app.integrations.ocr.commercial_adapter import CommercialOCRAdapter
@@ -7,6 +6,9 @@ from app.models.norm_processing_job import (
     NormProcessingJob,
     NormProcessingJobStatus,
 )
+from app.repositories.factory import get_processing_job_repository
+from app.repositories.json_processing_job_repository import JsonProcessingJobRepository
+from app.repositories.processing_job_repository import ProcessingJobRepository
 from app.services.audit_service import AuditService, audit_service
 
 
@@ -15,20 +17,36 @@ class OCRDispatcher:
         self,
         adapters: dict[str, object] | None = None,
         audit: AuditService = audit_service,
+        state_path: Path | None = None,
+        repository: ProcessingJobRepository | None = None,
     ) -> None:
         self._audit = audit
-        self.reset(adapters=adapters)
+        self._repository = (
+            repository
+            or JsonProcessingJobRepository(state_path=state_path)
+            if state_path is not None
+            else get_processing_job_repository()
+        )
+        self._adapters = adapters or {
+            "mineru": MineruOCRAdapter(),
+            "commercial": CommercialOCRAdapter(),
+        }
 
-    def reset(self, adapters: dict[str, object] | None = None) -> None:
-        self._id_sequence = count(1)
-        self._jobs: dict[str, NormProcessingJob] = {}
+    def reset(
+        self,
+        adapters: dict[str, object] | None = None,
+        *,
+        clear_state: bool = True,
+    ) -> None:
+        if clear_state:
+            self._repository.reset()
         self._adapters = adapters or {
             "mineru": MineruOCRAdapter(),
             "commercial": CommercialOCRAdapter(),
         }
 
     def get_job(self, job_id: str) -> NormProcessingJob | None:
-        return self._jobs.get(job_id)
+        return self._repository.get_job(job_id)
 
     def process_document(
         self,
@@ -38,12 +56,12 @@ class OCRDispatcher:
         provider_name: str,
     ) -> tuple[NormProcessingJob, dict | None]:
         job = NormProcessingJob(
-            id=f"norm-job-{next(self._id_sequence)}",
+            id=self._repository.next_job_id(),
             document_id=document_id,
             provider_name=provider_name,
             status=NormProcessingJobStatus.RUNNING,
         )
-        self._jobs[job.id] = job
+        self._repository.save_job(job)
         self._audit.record(
             job_id=job.id,
             step="job_started",
@@ -55,6 +73,7 @@ class OCRDispatcher:
             error_message = f"Unsupported OCR provider: {provider_name}"
             job.status = NormProcessingJobStatus.FAILED
             job.error_message = error_message
+            self._repository.save_job(job)
             self._audit.record(
                 job_id=job.id,
                 step="ocr_failed",
@@ -68,6 +87,7 @@ class OCRDispatcher:
         except Exception as exc:
             job.status = NormProcessingJobStatus.FAILED
             job.error_message = str(exc)
+            self._repository.save_job(job)
             self._audit.record(
                 job_id=job.id,
                 step="ocr_failed",
@@ -77,6 +97,7 @@ class OCRDispatcher:
             return job, None
 
         job.status = NormProcessingJobStatus.COMPLETED
+        self._repository.save_job(job)
         self._audit.record(
             job_id=job.id,
             step="ocr_completed",
@@ -85,4 +106,7 @@ class OCRDispatcher:
         return job, result
 
 
-ocr_dispatcher = OCRDispatcher()
+ocr_dispatcher = OCRDispatcher(
+    audit=audit_service,
+    repository=get_processing_job_repository(),
+)

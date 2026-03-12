@@ -6,6 +6,10 @@ from app.models.user import AuthenticatedUser
 from app.services.auth_service import AuthService, auth_service
 from app.services.audit_service import AuditService, audit_service
 from app.services.document_service import DocumentService, document_service
+from app.services.norm_library_service import (
+    NormLibraryService,
+    norm_library_service,
+)
 from app.services.ocr_dispatcher import OCRDispatcher, ocr_dispatcher
 from app.services.project_service import ProjectService, project_service
 
@@ -20,6 +24,10 @@ def get_project_service() -> ProjectService:
 
 def get_document_service() -> DocumentService:
     return document_service
+
+
+def get_norm_library_service() -> NormLibraryService:
+    return norm_library_service
 
 
 def get_ocr_dispatcher() -> OCRDispatcher:

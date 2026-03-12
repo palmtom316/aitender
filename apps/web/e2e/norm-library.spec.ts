@@ -1,7 +1,89 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { vi } from "vitest";
 
 import LibraryPage from "../src/app/projects/[projectId]/library/page";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    refresh: vi.fn()
+  })
+}));
+
+vi.mock("../src/lib/auth/server-session", () => ({
+  requireAccessToken: vi.fn().mockResolvedValue("auth-token-pm")
+}));
+
+vi.mock("../src/lib/api/norms", () => ({
+  listNormDocuments: vi.fn().mockResolvedValue([
+    {
+      id: "doc-1",
+      fileName: "grid-standard.pdf",
+      latestJobId: "norm-job-1",
+      status: "indexed",
+      libraryType: "norm_library"
+    }
+  ]),
+  getNormDocumentBundle: vi.fn().mockResolvedValue({
+    document: {
+      id: "doc-1",
+      fileName: "grid-standard.pdf",
+      latestJobId: "norm-job-1",
+      status: "indexed",
+      libraryType: "norm_library"
+    },
+    tree: [
+      {
+        label: "1",
+        title: "General",
+        children: [
+          {
+            label: "1.1",
+            title: "Scope",
+            children: [
+              {
+                label: "1.1.1",
+                title: "Scope clause text that explains the implementation scope."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    results: [
+      {
+        label: "1.1.1",
+        title: "Scope clause text that explains the implementation scope.",
+        pageStart: 2,
+        pageEnd: 2,
+        summaryText: "Scope clause text that explains the implementation scope.",
+        commentarySummary: "Commentary for the scope clause.",
+        pathLabels: ["1", "1.1", "1.1.1"]
+      }
+    ]
+  }),
+  getProcessingJobStatus: vi.fn().mockResolvedValue({
+    id: "norm-job-1",
+    status: "completed",
+    providerName: "mineru",
+    errorMessage: null,
+    auditSteps: ["job_started", "ocr_completed"]
+  }),
+  searchNorms: vi.fn().mockResolvedValue({
+    items: [
+      {
+        label: "1.1.1",
+        title: "Scope clause text that explains the implementation scope.",
+        pageStart: 2,
+        pageEnd: 2,
+        summaryText: "Scope clause text that explains the implementation scope.",
+        commentarySummary: "Commentary for the scope clause.",
+        pathLabels: ["1", "1.1", "1.1.1"]
+      }
+    ]
+  }),
+  uploadNormDocument: vi.fn()
+}));
 
 describe("NormLibraryE2E", () => {
   it("renders processing status and completes the search workflow", async () => {

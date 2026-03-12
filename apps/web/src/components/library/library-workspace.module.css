@@ -1,0 +1,328 @@
+.page {
+  display: grid;
+  gap: 20px;
+}
+
+.summary,
+.panel,
+.summaryCard,
+.subPanel {
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  gap: 20px;
+  padding: 28px;
+  border-radius: 24px;
+}
+
+.eyebrow,
+.panelEyebrow {
+  margin: 0 0 10px;
+  color: var(--accent-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  max-width: 12ch;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.08;
+}
+
+.description {
+  max-width: 60ch;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.summaryStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 20px;
+  background: #f3f4f6;
+}
+
+.summaryCard span,
+.panelHint,
+.panelMeta,
+.documentMeta,
+.emptyState span,
+.previewCard p,
+.detailCard p,
+.resultButton span,
+.treeButton small {
+  color: var(--muted);
+}
+
+.summaryCard strong {
+  font-size: 28px;
+}
+
+.managementGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.2fr) minmax(280px, 0.9fr);
+  gap: 18px;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  gap: 18px;
+}
+
+.panel,
+.subPanel {
+  padding: 22px;
+  border-radius: 22px;
+}
+
+.panelHeader,
+.subPanelHeader,
+.documentHead,
+.projectHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelTitle,
+.subPanelHeader h4 {
+  margin: 0;
+}
+
+.panelTitle {
+  font-size: 19px;
+}
+
+.uploadForm,
+.searchForm,
+.detailColumn,
+.documentList,
+.jobCard,
+.detailCard,
+.previewCard {
+  display: grid;
+  gap: 14px;
+}
+
+.uploadField,
+.searchLabel {
+  display: grid;
+  gap: 8px;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.uploadField input,
+.searchControls input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  background: #f7f7f8;
+}
+
+.searchControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+}
+
+.primaryButton,
+.secondaryButton,
+.documentCard,
+.resultButton,
+.treeButton {
+  border: 0;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, #10a37f 0%, #19c37d 100%);
+  color: #ffffff;
+}
+
+.secondaryButton {
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--muted-strong);
+}
+
+.documentList,
+.resultList {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.documentCard,
+.resultButton,
+.treeButton {
+  width: 100%;
+  text-align: left;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.documentCard {
+  display: grid;
+  gap: 10px;
+}
+
+.documentCardActive,
+.resultButtonActive {
+  border-color: rgba(16, 163, 127, 0.24);
+  background: rgba(16, 163, 127, 0.08);
+}
+
+.documentStatus,
+.pathTags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(16, 163, 127, 0.12);
+  color: var(--accent-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.documentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.jobCard,
+.detailCard,
+.previewCard,
+.emptyState {
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 22px;
+  background: #fafafa;
+}
+
+.auditList,
+.tree,
+.treeGroup {
+  display: grid;
+  gap: 10px;
+  padding-left: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.explorerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+  gap: 16px;
+}
+
+.subPanelHeader {
+  margin-bottom: 12px;
+}
+
+.resultButton {
+  display: grid;
+  gap: 6px;
+}
+
+.treeButton {
+  display: grid;
+  gap: 6px;
+}
+
+.treeGroup {
+  margin-top: 10px;
+  padding-left: 16px;
+}
+
+.pathTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.successNote,
+.errorNote {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+.successNote {
+  border: 1px solid rgba(16, 163, 127, 0.16);
+  background: rgba(16, 163, 127, 0.08);
+  color: var(--success);
+}
+
+.errorNote {
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger);
+}
+
+.emptyState {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .managementGrid,
+  .workspaceGrid,
+  .summary,
+  .explorerGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .summary,
+  .panel,
+  .subPanel {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .summaryStats,
+  .searchControls {
+    grid-template-columns: 1fr;
+  }
+
+  .panelHeader,
+  .subPanelHeader,
+  .documentHead {
+    flex-direction: column;
+  }
+}

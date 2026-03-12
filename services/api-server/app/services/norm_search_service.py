@@ -1,4 +1,14 @@
+from app.repositories.factory import get_norm_structure_repository
+from app.repositories.norm_structure_repository import NormStructureRepository
+
+
 class NormSearchService:
+    def __init__(
+        self,
+        structure_repository: NormStructureRepository | None = None,
+    ) -> None:
+        self._structure_repository = structure_repository or get_norm_structure_repository()
+
     def search(
         self,
         *,
@@ -24,7 +34,10 @@ class NormSearchService:
             if clause_id and entry.get("label") != clause_id:
                 continue
 
-            path_labels = self._build_path_labels(entry, entry_by_label)
+            path_labels = entry.get("path_labels") or self._build_path_labels(
+                entry,
+                entry_by_label,
+            )
             if path_prefix and path_prefix not in path_labels:
                 continue
 
@@ -45,6 +58,24 @@ class NormSearchService:
             )
 
         items.sort(key=lambda item: item["label"])
+        return {"items": items}
+
+    def search_document(
+        self,
+        *,
+        document_id: str,
+        query: str | None = None,
+        clause_id: str | None = None,
+        path_prefix: str | None = None,
+    ) -> dict | None:
+        items = self._structure_repository.search_clause_results(
+            document_id=document_id,
+            query=query,
+            clause_id=clause_id,
+            path_prefix=path_prefix,
+        )
+        if items is None:
+            return None
         return {"items": items}
 
     def _build_path_labels(
@@ -73,6 +104,5 @@ class NormSearchService:
         ).lower()
         tokens = [token for token in query.lower().split() if token]
         return all(token in haystack for token in tokens)
-
 
 norm_search_service = NormSearchService()

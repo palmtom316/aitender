@@ -1,0 +1,217 @@
+.page {
+  display: grid;
+  gap: 20px;
+}
+
+.hero,
+.panel,
+.metricCard {
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 20px;
+  padding: 28px;
+  border-radius: 24px;
+}
+
+.eyebrow,
+.panelEyebrow {
+  margin: 0 0 10px;
+  color: var(--accent-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  max-width: 12ch;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.08;
+}
+
+.description {
+  max-width: 60ch;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.heroActions {
+  display: grid;
+  gap: 14px;
+}
+
+.heroCard,
+.metricCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 24px;
+}
+
+.heroCard {
+  background: #f3f4f6;
+}
+
+.heroCard span,
+.metricCard p,
+.projectRole,
+.panelMeta,
+.secondaryAction,
+.moduleRow span {
+  margin: 0;
+  color: var(--muted);
+}
+
+.heroCard strong,
+.metricCard strong {
+  font-size: 24px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+  gap: 20px;
+}
+
+.panel {
+  padding: 24px;
+  border-radius: 24px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 20px;
+}
+
+.projectList,
+.moduleList {
+  display: grid;
+  gap: 14px;
+}
+
+.projectCard {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 20px;
+  background: #f9f9fa;
+}
+
+.projectHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.projectName {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.projectBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(16, 163, 127, 0.12);
+  color: var(--accent-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.projectMetaGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.projectMetaGrid span,
+.secondaryAction {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.projectActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #10a37f 0%, #19c37d 100%);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.moduleRow {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 20px;
+  background: #f9f9fa;
+}
+
+@media (max-width: 1100px) {
+  .hero,
+  .workspaceGrid,
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero,
+  .panel,
+  .metricCard {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .projectHead,
+  .panelHeader {
+    flex-direction: column;
+  }
+}

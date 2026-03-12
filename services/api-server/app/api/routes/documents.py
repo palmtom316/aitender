@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
@@ -13,6 +14,7 @@ from app.models.document_version import DocumentVersion
 from app.models.user import AuthenticatedUser
 from app.services.document_service import DocumentService
 from app.services.project_service import ProjectService
+from app.workers.process_norm_document import process_norm_document
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -21,6 +23,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 async def upload_document(
     project_id: Annotated[str, Form()],
     file: Annotated[UploadFile, File()],
+    provider_name: Annotated[str, Form()] = "mineru",
     current_user: AuthenticatedUser = Depends(get_current_user),
     project_service: ProjectService = Depends(get_project_service),
     service: DocumentService = Depends(get_document_service),
@@ -38,6 +41,12 @@ async def upload_document(
         filename=file.filename or "upload.pdf",
         content_type=file.content_type or "",
         content=payload,
+    )
+    process_norm_document(
+        document_id=document.id,
+        document_path=Path(artifact.storage_path),
+        provider_name=provider_name,
+        documents=service,
     )
     return {
         "document": document,

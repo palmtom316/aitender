@@ -1,3 +1,6 @@
+import { readAccessTokenFromDocumentCookie } from "../auth/session";
+import { getApiBaseUrl } from "./base-url";
+
 export type NormDocument = {
   id: string;
   fileName: string;
@@ -46,6 +49,40 @@ type ProcessingJobApiResponse = {
   audit_logs: Array<{
     step: string;
   }>;
+};
+
+type NormDocumentApiResponse = {
+  id: string;
+  file_name: string;
+  latest_job_id: string | null;
+  status: string;
+  library_type: string;
+};
+
+type NormTreeApiNode = {
+  label: string;
+  title: string;
+  children?: NormTreeApiNode[];
+};
+
+type NormSearchResultApiResponse = {
+  label: string;
+  title: string;
+  page_start: number;
+  page_end: number;
+  summary_text: string;
+  commentary_summary: string;
+  path_labels: string[];
+};
+
+type NormDocumentBundleApiResponse = {
+  document: NormDocumentApiResponse;
+  tree: NormTreeApiNode[];
+  results: NormSearchResultApiResponse[];
+};
+
+type UploadNormDocumentApiResponse = {
+  document: NormDocumentApiResponse;
 };
 
 const MOCK_DOCUMENTS: NormDocument[] = [
@@ -127,23 +164,143 @@ const MOCK_JOB_RESPONSES: Record<string, ProcessingJobApiResponse> = {
       id: "norm-job-1",
       provider_name: "mineru",
       status: "completed",
-      error_message: null,
+      error_message: null
     },
-    audit_logs: [
-      { step: "job_started" },
-      { step: "ocr_completed" },
-    ],
-  },
+    audit_logs: [{ step: "job_started" }, { step: "ocr_completed" }]
+  }
 };
 
-export async function listNormDocuments(_projectId: string): Promise<NormDocument[]> {
+function getAuthHeaders(accessToken?: string): HeadersInit {
+  const token =
+    accessToken ??
+    process.env.AITENDER_API_BEARER_TOKEN ??
+    process.env.NEXT_PUBLIC_API_BEARER_TOKEN ??
+    readAccessTokenFromDocumentCookie();
+
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function mapDocument(payload: NormDocumentApiResponse): NormDocument {
+  return {
+    id: payload.id,
+    fileName: payload.file_name,
+    latestJobId: payload.latest_job_id,
+    status: payload.status,
+    libraryType: payload.library_type
+  };
+}
+
+function mapTree(payload: NormTreeApiNode[]): NormTreeNode[] {
+  return payload.map((node) => ({
+    label: node.label,
+    title: node.title,
+    children: node.children ? mapTree(node.children) : undefined
+  }));
+}
+
+function mapSearchResult(
+  payload: NormSearchResultApiResponse
+): NormSearchResult {
+  return {
+    label: payload.label,
+    title: payload.title,
+    pageStart: payload.page_start,
+    pageEnd: payload.page_end,
+    summaryText: payload.summary_text,
+    commentarySummary: payload.commentary_summary,
+    pathLabels: payload.path_labels
+  };
+}
+
+export async function listNormDocuments(
+  projectId: string,
+  options?: { accessToken?: string }
+): Promise<NormDocument[]> {
+  const baseUrl = getApiBaseUrl();
+  if (baseUrl) {
+    const response = await fetch(
+      `${baseUrl}/projects/${projectId}/norm-library/documents`,
+      {
+        headers: getAuthHeaders(options?.accessToken)
+      }
+    );
+    if (response.status === 401) {
+      throw new Error("Unauthorized");
+    }
+    if (!response.ok) {
+      throw new Error("Failed to load norm documents");
+    }
+
+    const payload = (await response.json()) as { items: NormDocumentApiResponse[] };
+    return payload.items.map(mapDocument);
+  }
+
   return MOCK_DOCUMENTS;
 }
 
+export async function uploadNormDocument(options: {
+  projectId: string;
+  file: File;
+  providerName?: string;
+  accessToken?: string;
+}): Promise<NormDocument> {
+  const baseUrl = getApiBaseUrl();
+  if (!baseUrl) {
+    throw new Error("Norm uploads require NEXT_PUBLIC_API_BASE_URL");
+  }
+
+  const formData = new FormData();
+  formData.set("project_id", options.projectId);
+  formData.set("provider_name", options.providerName ?? "mineru");
+  formData.set("file", options.file);
+
+  const response = await fetch(`${baseUrl}/documents/upload`, {
+    method: "POST",
+    headers: getAuthHeaders(options.accessToken),
+    body: formData
+  });
+  if (response.status === 401) {
+    throw new Error("Unauthorized");
+  }
+  if (!response.ok) {
+    throw new Error("Failed to upload norm document");
+  }
+
+  const payload = (await response.json()) as UploadNormDocumentApiResponse;
+  return mapDocument(payload.document);
+}
+
 export async function getNormDocumentBundle(
-  _projectId: string,
-  documentId: string
+  projectId: string,
+  documentId: string,
+  options?: { accessToken?: string }
 ): Promise<NormDocumentBundle | null> {
+  const baseUrl = getApiBaseUrl();
+  if (baseUrl) {
+    const response = await fetch(
+      `${baseUrl}/projects/${projectId}/norm-library/documents/${documentId}`,
+      {
+        headers: getAuthHeaders(options?.accessToken)
+      }
+    );
+    if (response.status === 401) {
+      throw new Error("Unauthorized");
+    }
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error("Failed to load norm document bundle");
+    }
+
+    const payload = (await response.json()) as NormDocumentBundleApiResponse;
+    return {
+      document: mapDocument(payload.document),
+      tree: mapTree(payload.tree),
+      results: payload.results.map(mapSearchResult)
+    };
+  }
+
   const document = MOCK_DOCUMENTS.find((item) => item.id === documentId);
   if (!document) {
     return null;
@@ -160,7 +317,36 @@ export async function searchNorms(options: {
   projectId: string;
   documentId: string;
   query: string;
+  accessToken?: string;
 }): Promise<{ items: NormSearchResult[] }> {
+  const baseUrl = getApiBaseUrl();
+  if (baseUrl) {
+    const params = new URLSearchParams();
+    if (options.query.trim()) {
+      params.set("query", options.query.trim());
+    }
+
+    const response = await fetch(
+      `${baseUrl}/projects/${options.projectId}/norm-library/documents/${options.documentId}/search?${params.toString()}`,
+      {
+        headers: getAuthHeaders(options.accessToken)
+      }
+    );
+    if (response.status === 401) {
+      throw new Error("Unauthorized");
+    }
+    if (!response.ok) {
+      throw new Error("Failed to load search results");
+    }
+
+    const payload = (await response.json()) as {
+      items: NormSearchResultApiResponse[];
+    };
+    return {
+      items: payload.items.map(mapSearchResult)
+    };
+  }
+
   const normalizedQuery = options.query.trim().toLowerCase();
   if (!normalizedQuery) {
     return { items: [] };
@@ -184,11 +370,17 @@ export async function searchNorms(options: {
 }
 
 export async function getProcessingJobStatus(
-  jobId: string
+  jobId: string,
+  options?: { accessToken?: string }
 ): Promise<ProcessingJobView> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrl = getApiBaseUrl();
   if (baseUrl) {
-    const response = await fetch(`${baseUrl}/jobs/${jobId}`);
+    const response = await fetch(`${baseUrl}/jobs/${jobId}`, {
+      headers: getAuthHeaders(options?.accessToken)
+    });
+    if (response.status === 401) {
+      throw new Error("Unauthorized");
+    }
     if (!response.ok) {
       throw new Error("Failed to load processing job status");
     }
@@ -214,6 +406,6 @@ function mapProcessingJobResponse(
     status: payload.job.status,
     providerName: payload.job.provider_name,
     errorMessage: payload.job.error_message,
-    auditSteps: payload.audit_logs.map((item) => item.step),
+    auditSteps: payload.audit_logs.map((item) => item.step)
   };
 }

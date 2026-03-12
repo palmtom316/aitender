@@ -26,9 +26,38 @@ npm run build
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install fastapi==0.116.1 uvicorn==0.35.0 httpx==0.28.1 pytest==8.3.5 python-multipart==0.0.20
+.venv/bin/pip install fastapi==0.116.1 uvicorn==0.35.0 httpx==0.28.1 pytest==8.3.5 python-multipart==0.0.20 'psycopg[binary]==3.2.10'
 PYTHONPATH=services/api-server .venv/bin/pytest services/api-server/tests -q
 PYTHONPATH=services/api-server .venv/bin/pytest services/api-server/tests/test_norm_pipeline_e2e.py -q
+```
+
+### PostgreSQL Backend
+
+The default repository backend is file-backed JSON. To prepare the PostgreSQL schema instead:
+
+```bash
+export AITENDER_REPOSITORY_BACKEND=postgres
+export AITENDER_DATABASE_URL='postgresql://aitender:secret@localhost:55432/aitender'
+PYTHONPATH=services/api-server python3 services/api-server/scripts/init_postgres.py
+```
+
+To initialize schema only without seed data:
+
+```bash
+PYTHONPATH=services/api-server python3 services/api-server/scripts/init_postgres.py --skip-seed
+```
+
+To run a local PostgreSQL instance for development:
+
+```bash
+docker compose up -d postgres
+```
+
+To run the real PostgreSQL repository integration test after installing API deps:
+
+```bash
+export AITENDER_POSTGRES_TEST_URL='postgresql://aitender:secret@localhost:55432/aitender'
+PYTHONPATH=services/api-server python3 -m pytest services/api-server/tests/test_postgres_repositories_integration.py -q
 ```
 
 ## Current MVP

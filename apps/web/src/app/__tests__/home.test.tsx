@@ -1,15 +1,17 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { vi, describe, expect, it } from "vitest";
 import HomePage from "../page";
 
-describe("HomePage", () => {
-  it("renders the Phase 1 title", () => {
-    render(<HomePage />);
+const redirectMock = vi.hoisted(() => vi.fn());
 
-    expect(
-      screen.getByRole("heading", {
-        name: "aitender Tender Library Phase 1"
-      })
-    ).toBeInTheDocument();
+vi.mock("next/navigation", () => ({
+  redirect: redirectMock
+}));
+
+describe("HomePage", () => {
+  it("redirects to the protected projects console", () => {
+    HomePage();
+
+    expect(redirectMock).toHaveBeenCalledWith("/projects");
   });
 });

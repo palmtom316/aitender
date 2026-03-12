@@ -1,9 +1,8 @@
 import React from "react";
+import { redirect } from "next/navigation";
 
-import { DocumentTable } from "../../../../components/library/document-table";
-import { JobStatusPanel } from "../../../../components/library/job-status-panel";
-import { NormSearchPanel } from "../../../../components/library/norm-search-panel";
-import { UploadPanel } from "../../../../components/library/upload-panel";
+import { LibraryWorkspace } from "../../../../components/library/library-workspace";
+import { requireAccessToken } from "../../../../lib/auth/server-session";
 import {
   getNormDocumentBundle,
   getProcessingJobStatus,
@@ -16,47 +15,56 @@ type LibraryPageProps = {
 
 export default async function LibraryPage({ params }: LibraryPageProps) {
   const { projectId } = await params;
-  const documents = await listNormDocuments(projectId);
+  const accessToken = await requireAccessToken();
+  let documents;
+  try {
+    documents = await listNormDocuments(projectId, { accessToken });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      redirect("/login");
+    }
+    throw error;
+  }
 
   if (documents.length === 0) {
     return (
-      <main>
-        <h1>Project library</h1>
-        <UploadPanel projectId={projectId} />
-        <DocumentTable documents={documents} />
-        <p>No norm documents uploaded yet.</p>
-      </main>
+      <LibraryWorkspace
+        documents={documents}
+        initialBundle={null}
+        initialDocumentId={null}
+        initialJob={null}
+        projectId={projectId}
+      />
     );
   }
 
   const activeDocument = documents[0];
-  const bundle = await getNormDocumentBundle(projectId, activeDocument.id);
+  const bundle = await getNormDocumentBundle(projectId, activeDocument.id, {
+    accessToken
+  });
   const job = activeDocument.latestJobId
-    ? await getProcessingJobStatus(activeDocument.latestJobId)
+    ? await getProcessingJobStatus(activeDocument.latestJobId, { accessToken })
     : null;
   if (!bundle) {
     return (
-      <main>
-        <h1>Project library</h1>
-        <UploadPanel projectId={projectId} />
-        <DocumentTable documents={documents} />
-        <p>Document not found.</p>
-      </main>
+      <LibraryWorkspace
+        documents={documents}
+        initialBundle={null}
+        initialDocumentId={activeDocument.id}
+        initialError="Document not found."
+        initialJob={job}
+        projectId={projectId}
+      />
     );
   }
 
   return (
-    <main>
-      <h1>Project library</h1>
-      <UploadPanel projectId={projectId} />
-      <DocumentTable documents={documents} />
-      <JobStatusPanel job={job} />
-      <NormSearchPanel
-        documentId={activeDocument.id}
-        initialResults={bundle.results}
-        projectId={projectId}
-        tree={bundle.tree}
-      />
-    </main>
+    <LibraryWorkspace
+      documents={documents}
+      initialBundle={bundle}
+      initialDocumentId={activeDocument.id}
+      initialJob={job}
+      projectId={projectId}
+    />
   );
 }

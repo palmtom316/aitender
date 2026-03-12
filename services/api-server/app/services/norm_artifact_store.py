@@ -38,3 +38,20 @@ class NormArtifactStore:
             layout_json_path=layout_json_path,
             metadata_json_path=metadata_json_path,
         )
+
+    def save_json(
+        self,
+        *,
+        document_id: str,
+        version_id: str,
+        filename: str,
+        payload: dict,
+    ) -> Path:
+        target_dir = self.root_directory / document_id / version_id
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        target_path = target_dir / filename
+        target_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2)
+        )
+        return target_path

@@ -1,39 +1,38 @@
 :root {
   color-scheme: light;
-  --bg-canvas: #f7f7f8;
-  --bg-shell: #1f1f1f;
-  --bg-shell-elevated: #2a2a2a;
-  --bg-panel: rgba(255, 255, 255, 0.92);
+  --bg-canvas: #faf9f6; /* Off-white for eye protection */
+  --bg-shell: #ffffff; /* Clean white for sidebar */
+  --bg-shell-elevated: #f0f4f8; /* Soft blueish gray */
+  --bg-panel: rgba(255, 255, 255, 0.96);
   --bg-panel-strong: #ffffff;
-  --bg-panel-muted: #f0f0f0;
-  --bg-accent-soft: rgba(16, 163, 127, 0.12);
-  --line-soft: rgba(15, 23, 42, 0.08);
-  --line-strong: rgba(15, 23, 42, 0.14);
-  --text-strong: #202123;
-  --text-muted: #6e6e80;
-  --text-shell: rgba(255, 255, 255, 0.92);
+  --bg-panel-muted: #f4f6f8;
+  --bg-accent-soft: rgba(16, 163, 127, 0.08); /* Minimalist green tint */
+  --line-soft: rgba(0, 0, 0, 0.06);
+  --line-strong: rgba(0, 0, 0, 0.12);
+  --text-strong: #1a1a1b; /* Soft black */
+  --text-muted: #6b7280; /* Neutral gray */
+  --text-shell: #1a1a1b;
   --accent-primary: #10a37f;
-  --accent-secondary: #4f8cff;
+  --accent-secondary: #0d8a6b;
   --status-success: #10a37f;
-  --status-warning: #d97706;
-  --status-danger: #dc2626;
-  --shadow-soft: 0 12px 32px rgba(15, 23, 42, 0.06);
-  --shadow-strong: 0 22px 60px rgba(15, 23, 42, 0.08);
-  --radius-xl: 30px;
-  --radius-lg: 22px;
-  --radius-md: 16px;
-  --radius-sm: 12px;
-  font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei",
-    "Noto Sans SC", sans-serif;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.05);
+  --radius-xl: 20px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --surface: var(--bg-panel);
   --surface-strong: var(--bg-panel-strong);
   --surface-muted: var(--bg-panel-muted);
   --line: var(--line-soft);
   --text: var(--text-strong);
   --muted: var(--text-muted);
-  --muted-strong: #3f3f46;
+  --muted-strong: #4b5563;
   --accent: var(--accent-primary);
-  --accent-strong: #0d8a6b;
+  --accent-strong: var(--accent-secondary);
   --accent-soft: var(--bg-accent-soft);
   --nav: var(--bg-shell);
   --nav-strong: var(--bg-shell-elevated);
@@ -53,9 +52,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(16, 163, 127, 0.08), transparent 22%),
-    linear-gradient(180deg, #fafafa 0%, var(--bg-canvas) 100%);
+  background: var(--bg-canvas);
   color: var(--text-strong);
 }
 
@@ -84,7 +81,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 a:focus-visible {
-  outline: 2px solid rgba(16, 163, 127, 0.8);
+  outline: 2px solid rgba(16, 163, 127, 0.5);
   outline-offset: 2px;
 }
 
@@ -103,5 +100,5 @@ h4 {
 }
 
 ::selection {
-  background: rgba(16, 163, 127, 0.18);
+  background: rgba(16, 163, 127, 0.15);
 }

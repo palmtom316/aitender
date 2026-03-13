@@ -19,7 +19,7 @@ export default async function LoginPage() {
         </div>
         <h1 className={styles.title}>把投标资料、规范检索和处理链路收进一个工作台</h1>
         <p className={styles.description}>
-          参考 `chatgpt.com` 的结构，这里采用更克制的深侧栏与浅主区语言，但保留资料库场景所需的业务密度和操作闭环。
+          采用极简、护眼风格与清晰的面板设计，保留资料库场景所需的业务密度和操作闭环。
         </p>
 
         <div className={styles.signalList}>

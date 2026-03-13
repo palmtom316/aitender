@@ -18,11 +18,10 @@
   gap: 24px;
   padding: 40px;
   border-radius: 28px;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 18%),
-    linear-gradient(180deg, #202123 0%, #171717 100%);
-  color: #ececf1;
-  box-shadow: var(--shadow-strong);
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-soft);
 }
 
 .brandTop {
@@ -38,10 +37,10 @@
   display: inline-flex;
   align-self: flex-start;
   padding: 9px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line-soft);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--bg-hover);
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -63,7 +62,7 @@
 .description {
   max-width: 580px;
   margin: 0;
-  color: rgba(236, 236, 241, 0.72);
+  color: var(--text-regular);
   font-size: 16px;
   line-height: 1.6;
 }
@@ -78,17 +77,18 @@
   display: grid;
   gap: 8px;
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line-soft);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-hover);
 }
 
 .signalCard strong {
   font-size: 17px;
+  color: var(--text-strong);
 }
 
 .signalCard span {
-  color: rgba(236, 236, 241, 0.7);
+  color: var(--text-regular);
   font-size: 13px;
   line-height: 1.6;
 }

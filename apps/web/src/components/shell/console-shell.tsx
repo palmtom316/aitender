@@ -19,28 +19,16 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    key: "dashboard",
-    label: "项目总览",
-    description: "驾驶舱",
-    icon: <DashboardIcon />
-  },
-  {
     key: "library",
     label: "投标资料库",
-    description: "规范检索",
+    description: "规范检索、拆解与分析",
     icon: <LibraryIcon />
   },
   {
-    key: "schedule",
-    label: "进度协同",
-    description: "规划中",
-    icon: <TimelineIcon />
-  },
-  {
-    key: "review",
-    label: "评审中心",
-    description: "规划中",
-    icon: <ReviewIcon />
+    key: "ai-settings",
+    label: "ai设置",
+    description: "AI模型与API配置",
+    icon: <SettingsIcon />
   }
 ];
 
@@ -64,20 +52,24 @@ export function ConsoleShell({ children }: ConsoleShellProps) {
           <nav className={styles.navList}>
             {navItems.map((item) => {
               const href =
-                item.key === "library" ? currentProjectLibraryHref : "/projects";
+                item.key === "library" 
+                  ? currentProjectLibraryHref 
+                  : item.key === "ai-settings"
+                  ? resolveSettingsHref(pathname)
+                  : "/projects";
               const isActive =
                 item.key === "library"
                   ? pathname.includes("/library")
-                  : item.key === "dashboard"
-                    ? pathname === "/projects"
-                    : false;
+                  : item.key === "ai-settings"
+                  ? pathname.includes("/settings/ai")
+                  : false;
 
               return (
                 <Link
                   aria-current={isActive ? "page" : undefined}
                   className={`${styles.navItem} ${
                     isActive ? styles.navItemActive : ""
-                  } ${item.key === "dashboard" || item.key === "library" ? "" : styles.navItemMuted}`}
+                  }`}
                   href={href}
                   key={item.key}
                 >
@@ -106,12 +98,14 @@ export function ConsoleShell({ children }: ConsoleShellProps) {
         <header className={styles.topbar}>
           <div>
             <p className={styles.eyebrow}>
-              {pathname.includes("/library") ? "投标资料库" : "项目总览"}
+              {pathname.includes("/library") ? "投标资料库" : pathname.includes("/settings/ai") ? "系统设置" : "项目操作台"}
             </p>
             <h1 className={styles.title}>
               {pathname.includes("/library")
                 ? "投标资料库工作台"
-                : "投标项目驾驶舱"}
+                : pathname.includes("/settings/ai")
+                ? "AI模型与API设置"
+                : "投标项目控制台"}
             </h1>
           </div>
 
@@ -141,7 +135,19 @@ function resolveLibraryHref(pathname: string): string {
   if (match) {
     return `/projects/${match[1]}/library`;
   }
+  // Fallback to a valid format or projects list if the ID is missing
+  const projMatch = pathname.match(/^\/projects\/([^/]+)/);
+  if (projMatch) {
+    return `/projects/${projMatch[1]}/library`;
+  }
+  return "/projects";
+}
 
+function resolveSettingsHref(pathname: string): string {
+  const match = pathname.match(/^\/projects\/([^/]+)/);
+  if (match) {
+    return `/projects/${match[1]}/settings/ai`;
+  }
   return "/projects";
 }
 
@@ -181,6 +187,14 @@ function SearchIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
       <path d="M10.5 4a6.5 6.5 0 1 1 0 13a6.5 6.5 0 0 1 0-13m0 2a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9m8.4 10.99L21 19.09L19.09 21l-2.11-2.01z" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
     </svg>
   );
 }

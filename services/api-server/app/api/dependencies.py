@@ -11,6 +11,10 @@ from app.services.norm_library_service import (
     norm_library_service,
 )
 from app.services.ocr_dispatcher import OCRDispatcher, ocr_dispatcher
+from app.services.project_ai_settings_service import (
+    ProjectAiSettingsService,
+    project_ai_settings_service,
+)
 from app.services.project_service import ProjectService, project_service
 
 
@@ -32,6 +36,10 @@ def get_norm_library_service() -> NormLibraryService:
 
 def get_ocr_dispatcher() -> OCRDispatcher:
     return ocr_dispatcher
+
+
+def get_project_ai_settings_service() -> ProjectAiSettingsService:
+    return project_ai_settings_service
 
 
 def get_audit_service() -> AuditService:

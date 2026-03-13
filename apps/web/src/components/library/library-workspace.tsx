@@ -15,7 +15,10 @@ import {
   searchNorms,
   uploadNormDocument
 } from "../../lib/api/norms";
+import { getApiBaseUrl } from "../../lib/api/base-url";
 import styles from "./library-workspace.module.css";
+import { NormDetailPanel } from "./norm-detail-panel";
+import { NormPdfViewer } from "./norm-pdf-viewer";
 
 type LibraryWorkspaceProps = {
   projectId: string;
@@ -60,6 +63,10 @@ export function LibraryWorkspace({
   const runningCount = allDocuments.filter(
     (document) => document.status === "processing"
   ).length;
+  const pdfUrl =
+    activeDocument && getApiBaseUrl()
+      ? `${getApiBaseUrl()}/projects/${projectId}/norm-library/documents/${activeDocument.id}/file`
+      : "";
 
   async function loadDocument(document: NormDocument) {
     setActiveDocumentId(document.id);
@@ -135,12 +142,30 @@ export function LibraryWorkspace({
     setSelectedResult(bundle?.results[0] ?? null);
   }
 
-  function handleTreeSelect(label: string) {
+  async function handleTreeSelect(label: string) {
     const match = results.find(
       (result) => result.label === label || result.pathLabels.includes(label)
     );
     if (match) {
       setSelectedResult(match);
+      return;
+    }
+
+    if (!activeDocumentId) {
+      return;
+    }
+
+    try {
+      const response = await searchNorms({
+        projectId,
+        documentId: activeDocumentId,
+        pathPrefix: label
+      });
+      setResults(response.items);
+      setSelectedResult(response.items[0] ?? null);
+      setSearchError(null);
+    } catch {
+      setSearchError("Failed to load tree selection.");
     }
   }
 
@@ -390,7 +415,9 @@ export function LibraryWorkspace({
                   <TreeNode
                     key={node.label}
                     node={node}
-                    onSelect={handleTreeSelect}
+                    onSelect={(label) => {
+                      void handleTreeSelect(label);
+                    }}
                     selectedLabel={selectedResult?.label ?? null}
                   />
                 ))}
@@ -400,60 +427,15 @@ export function LibraryWorkspace({
         </article>
 
         <div className={styles.detailColumn}>
-          <article aria-label="Clause detail" className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <div>
-                <p className={styles.panelEyebrow}>条款详情</p>
-                <h3 className={styles.panelTitle}>Clause detail</h3>
-              </div>
-            </div>
-
-            {selectedResult ? (
-              <div className={styles.detailCard}>
-                <h4>
-                  {selectedResult.label} {selectedResult.title}
-                </h4>
-                <p>{selectedResult.summaryText}</p>
-                <p>{selectedResult.commentarySummary}</p>
-                <p>Pages {selectedResult.pageStart}-{selectedResult.pageEnd}</p>
-                <div className={styles.pathTags}>
-                  {selectedResult.pathLabels.map((label) => (
-                    <span key={label}>{label}</span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className={styles.emptyState}>
-                <strong>请选择一个条款</strong>
-                <span>结果列表和目录树都可以驱动右侧详情面板。</span>
-              </div>
-            )}
+          <article className={styles.panel}>
+            <NormDetailPanel result={selectedResult} />
           </article>
-
-          <article aria-label="Highlight preview" className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <div>
-                <p className={styles.panelEyebrow}>定位预览</p>
-                <h3 className={styles.panelTitle}>Highlight preview</h3>
-              </div>
-            </div>
-
-            {selectedResult ? (
-              <div className={styles.previewCard}>
-                <p>Highlight match: {deferredQuery || selectedResult.label}</p>
-                <p>
-                  Preview pages {selectedResult.pageStart}-{selectedResult.pageEnd}
-                </p>
-                <p>
-                  当前条款已同步到目录树与详情区，可继续切换文档或重跑检索。
-                </p>
-              </div>
-            ) : (
-              <div className={styles.emptyState}>
-                <strong>Run a search and select a result to preview the hit.</strong>
-                <span>这里会展示与搜索命中的定位信息。</span>
-              </div>
-            )}
+          <article aria-label="PDF 原文对比" className={styles.panel} style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", minHeight: "600px" }}>
+            <NormPdfViewer
+              fileUrl={pdfUrl}
+              result={selectedResult}
+              query={deferredQuery}
+            />
           </article>
         </div>
       </section>

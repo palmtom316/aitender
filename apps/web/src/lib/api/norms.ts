@@ -23,6 +23,7 @@ export type NormSearchResult = {
   summaryText: string;
   commentarySummary: string;
   pathLabels: string[];
+  tags: string[];
 };
 
 export type NormDocumentBundle = {
@@ -73,6 +74,7 @@ type NormSearchResultApiResponse = {
   summary_text: string;
   commentary_summary: string;
   path_labels: string[];
+  tags?: string[];
 };
 
 type NormDocumentBundleApiResponse = {
@@ -136,7 +138,8 @@ const MOCK_RESULTS: NormSearchResult[] = [
     pageEnd: 1,
     summaryText: "General clause text for the project.",
     commentarySummary: "Commentary for the general clause.",
-    pathLabels: ["1", "1.0.1"]
+    pathLabels: ["1", "1.0.1"],
+    tags: []
   },
   {
     label: "1.1.1",
@@ -145,7 +148,8 @@ const MOCK_RESULTS: NormSearchResult[] = [
     pageEnd: 2,
     summaryText: "Scope clause text that explains the implementation scope.",
     commentarySummary: "Commentary for the scope clause.",
-    pathLabels: ["1", "1.1", "1.1.1"]
+    pathLabels: ["1", "1.1", "1.1.1"],
+    tags: ["mandatory"]
   },
   {
     label: "2.0.1",
@@ -154,7 +158,8 @@ const MOCK_RESULTS: NormSearchResult[] = [
     pageEnd: 3,
     summaryText: "Safety clause text for on-site execution.",
     commentarySummary: "Commentary for the safety clause.",
-    pathLabels: ["2", "2.0.1"]
+    pathLabels: ["2", "2.0.1"],
+    tags: []
   }
 ];
 
@@ -208,7 +213,8 @@ function mapSearchResult(
     pageEnd: payload.page_end,
     summaryText: payload.summary_text,
     commentarySummary: payload.commentary_summary,
-    pathLabels: payload.path_labels
+    pathLabels: payload.path_labels,
+    tags: payload.tags ?? []
   };
 }
 
@@ -316,14 +322,22 @@ export async function getNormDocumentBundle(
 export async function searchNorms(options: {
   projectId: string;
   documentId: string;
-  query: string;
+  query?: string;
+  clauseId?: string;
+  pathPrefix?: string;
   accessToken?: string;
 }): Promise<{ items: NormSearchResult[] }> {
   const baseUrl = getApiBaseUrl();
   if (baseUrl) {
     const params = new URLSearchParams();
-    if (options.query.trim()) {
+    if (options.query?.trim()) {
       params.set("query", options.query.trim());
+    }
+    if (options.clauseId?.trim()) {
+      params.set("clause_id", options.clauseId.trim());
+    }
+    if (options.pathPrefix?.trim()) {
+      params.set("path_prefix", options.pathPrefix.trim());
     }
 
     const response = await fetch(
@@ -347,19 +361,27 @@ export async function searchNorms(options: {
     };
   }
 
-  const normalizedQuery = options.query.trim().toLowerCase();
+  const normalizedQuery = options.query?.trim().toLowerCase() ?? "";
+  let items = MOCK_RESULTS;
+  if (options.clauseId?.trim()) {
+    items = items.filter((item) => item.label === options.clauseId);
+  }
+  if (options.pathPrefix?.trim()) {
+    items = items.filter((item) => item.pathLabels.includes(options.pathPrefix!));
+  }
   if (!normalizedQuery) {
-    return { items: [] };
+    return { items };
   }
 
   return {
-    items: MOCK_RESULTS.filter((item) => {
+    items: items.filter((item) => {
       const haystack = [
         item.label,
         item.title,
         item.summaryText,
         item.commentarySummary,
-        item.pathLabels.join(" ")
+        item.pathLabels.join(" "),
+        item.tags.join(" ")
       ]
         .join(" ")
         .toLowerCase();

@@ -63,6 +63,7 @@ def test_query_norm_uses_repository_backed_search_when_payload_omits_json(monkey
                     "summary_text": "Scope clause text that explains the implementation scope.",
                     "commentary_summary": "",
                     "path_labels": ["1", "1.1", "1.1.1"],
+                    "tags": [],
                 }
             ]
         }

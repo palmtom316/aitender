@@ -110,7 +110,13 @@ class NormLibraryService:
         if version is None:
             return (
                 {"entries": [], "tree": []},
-                {"entries": [], "commentary_map": {}, "errors": []},
+                {
+                    "summary_text": "",
+                    "tree": [],
+                    "entries": [],
+                    "commentary_map": {},
+                    "errors": [],
+                },
             )
 
         artifacts = {
@@ -123,7 +129,13 @@ class NormLibraryService:
         )
         commentary_result = self._load_json_artifact(
             artifacts.get("commentary_json"),
-            default={"entries": [], "commentary_map": {}, "errors": []},
+            default={
+                "summary_text": "",
+                "tree": [],
+                "entries": [],
+                "commentary_map": {},
+                "errors": [],
+            },
         )
         return clause_index, commentary_result
 
@@ -162,8 +174,24 @@ class NormLibraryService:
         entries: list[NormCommentaryEntry],
     ) -> dict:
         entry_dicts = [entry.model_dump(mode="json") for entry in entries]
+        nodes = {
+            entry["label"]: {**entry, "children": []}
+            for entry in entry_dicts
+        }
+        roots: list[dict] = []
+
+        for entry in entry_dicts:
+            node = nodes[entry["label"]]
+            parent_label = entry.get("parent_label")
+            if parent_label and parent_label in nodes:
+                nodes[parent_label]["children"].append(node)
+            else:
+                roots.append(node)
+
         return {
+            "summary_text": "",
             "entries": entry_dicts,
+            "tree": roots,
             "commentary_map": {
                 entry.label: entry.commentary_text
                 for entry in entries

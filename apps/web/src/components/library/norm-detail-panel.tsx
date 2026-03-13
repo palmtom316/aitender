@@ -18,7 +18,8 @@ export function NormDetailPanel({ result }: NormDetailPanelProps) {
             {result.label} {result.title}
           </h3>
           <p>{result.summaryText}</p>
-          <p>{result.commentarySummary}</p>
+          {result.commentarySummary ? <p>{result.commentarySummary}</p> : null}
+          {result.tags.length > 0 ? <p>Tags: {result.tags.join(", ")}</p> : null}
           <p>
             Pages {result.pageStart}-{result.pageEnd}
           </p>

@@ -55,6 +55,8 @@ class NormCommentaryBuilder:
                         page_start=page_start,
                         page_end=page_end,
                         commentary_text="",
+                        summary_text="",
+                        tags=[],
                     )
                 )
                 known_labels.add(label)
@@ -87,6 +89,8 @@ class NormCommentaryBuilder:
                     page_start=page_start,
                     page_end=page_end,
                     commentary_text=commentary_text,
+                    summary_text=commentary_text,
+                    tags=[],
                 )
             )
             commentary_map[label] = commentary_text

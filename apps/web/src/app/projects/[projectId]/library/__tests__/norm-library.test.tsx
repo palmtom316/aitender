@@ -76,7 +76,8 @@ const defaultBundle = {
       pageEnd: 2,
       summaryText: "Scope clause text that explains the implementation scope.",
       commentarySummary: "Commentary for the scope clause.",
-      pathLabels: ["1", "1.1", "1.1.1"]
+      pathLabels: ["1", "1.1", "1.1.1"],
+      tags: ["mandatory"]
     }
   ]
 };

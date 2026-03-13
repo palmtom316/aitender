@@ -54,7 +54,8 @@ class NormIndexBuilder:
                         parent_label=parent_label,
                         page_start=page_start,
                         page_end=page_end,
-                        summary_text="",
+                        summary_text=self._summary_builder.build(title),
+                        tags=[],
                     )
                 )
                 known_labels.add(label)
@@ -83,6 +84,7 @@ class NormIndexBuilder:
                     page_start=page_start,
                     page_end=page_end,
                     summary_text=self._summary_builder.build(title),
+                    tags=[],
                 )
             )
 

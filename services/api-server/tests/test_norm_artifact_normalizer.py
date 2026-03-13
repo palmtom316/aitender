@@ -43,6 +43,25 @@ def test_normalizer_converts_commercial_payload_to_shared_schema():
     }
 
 
+def test_normalizer_accepts_remote_provider_with_mineru_style_fields():
+    normalized = NormArtifactNormalizer().normalize(
+        {
+            "provider": "remote-ocr",
+            "markdown_text": "# 3 Safety\nRemote sample",
+            "layout_payload": {
+                "pages": [{"page": 3, "text": "3 Safety Remote sample"}]
+            },
+            "metadata": {"source_path": "/tmp/remote/norm.pdf"},
+        }
+    )
+
+    assert normalized.provider == "remote-ocr"
+    assert normalized.markdown_text == "# 3 Safety\nRemote sample"
+    assert [page.model_dump() for page in normalized.page_texts] == [
+        {"page": 3, "text": "3 Safety Remote sample"}
+    ]
+
+
 def test_artifact_store_persists_markdown_and_debug_json(tmp_path: Path):
     payload = json.loads((FIXTURES_DIR / "mineru.json").read_text())
     normalized = NormArtifactNormalizer().normalize(payload)

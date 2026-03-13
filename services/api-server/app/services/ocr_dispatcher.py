@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Callable
 
 from app.integrations.ocr.commercial_adapter import CommercialOCRAdapter
 from app.integrations.ocr.mineru_adapter import MineruOCRAdapter
@@ -48,12 +49,40 @@ class OCRDispatcher:
     def get_job(self, job_id: str) -> NormProcessingJob | None:
         return self._repository.get_job(job_id)
 
+    def mark_job_status(
+        self,
+        job: NormProcessingJob,
+        *,
+        status: NormProcessingJobStatus,
+        error_message: str | None = None,
+    ) -> NormProcessingJob:
+        job.status = status
+        job.error_message = error_message
+        self._repository.save_job(job)
+        return job
+
+    def record_step(
+        self,
+        *,
+        job_id: str,
+        step: str,
+        message: str,
+        level: str = "info",
+    ) -> None:
+        self._audit.record(
+            job_id=job_id,
+            step=step,
+            message=message,
+            level=level,
+        )
+
     def process_document(
         self,
         *,
         document_id: str,
         document_path: Path,
         provider_name: str,
+        extract_override: Callable[[Path], dict] | None = None,
     ) -> tuple[NormProcessingJob, dict | None]:
         job = NormProcessingJob(
             id=self._repository.next_job_id(),
@@ -68,12 +97,14 @@ class OCRDispatcher:
             message=f"Started OCR processing with {provider_name}",
         )
 
-        adapter = self._adapters.get(provider_name)
-        if adapter is None:
+        adapter = None if extract_override is not None else self._adapters.get(provider_name)
+        if adapter is None and extract_override is None:
             error_message = f"Unsupported OCR provider: {provider_name}"
-            job.status = NormProcessingJobStatus.FAILED
-            job.error_message = error_message
-            self._repository.save_job(job)
+            self.mark_job_status(
+                job,
+                status=NormProcessingJobStatus.FAILED,
+                error_message=error_message,
+            )
             self._audit.record(
                 job_id=job.id,
                 step="ocr_failed",
@@ -83,11 +114,17 @@ class OCRDispatcher:
             return job, None
 
         try:
-            result = adapter.extract(document_path)
+            result = (
+                extract_override(document_path)
+                if extract_override is not None
+                else adapter.extract(document_path)
+            )
         except Exception as exc:
-            job.status = NormProcessingJobStatus.FAILED
-            job.error_message = str(exc)
-            self._repository.save_job(job)
+            self.mark_job_status(
+                job,
+                status=NormProcessingJobStatus.FAILED,
+                error_message=str(exc),
+            )
             self._audit.record(
                 job_id=job.id,
                 step="ocr_failed",
@@ -96,8 +133,10 @@ class OCRDispatcher:
             )
             return job, None
 
-        job.status = NormProcessingJobStatus.COMPLETED
-        self._repository.save_job(job)
+        self.mark_job_status(
+            job,
+            status=NormProcessingJobStatus.COMPLETED,
+        )
         self._audit.record(
             job_id=job.id,
             step="ocr_completed",

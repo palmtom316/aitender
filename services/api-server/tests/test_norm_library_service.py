@@ -109,6 +109,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
             "summary_text": "General clause text for the project.",
             "commentary_summary": "",
             "path_labels": ["1", "1.0.1"],
+            "tags": [],
         },
         {
             "label": "1.1.1",
@@ -118,6 +119,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
             "summary_text": "Scope clause text that explains the implementation scope.",
             "commentary_summary": "",
             "path_labels": ["1", "1.1", "1.1.1"],
+            "tags": [],
         },
     ]
     assert search == {
@@ -130,6 +132,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
                 "summary_text": "Scope clause text that explains the implementation scope.",
                 "commentary_summary": "",
                 "path_labels": ["1", "1.1", "1.1.1"],
+                "tags": [],
             }
         ]
     }

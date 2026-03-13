@@ -6,6 +6,7 @@ from app.api.routes.jobs import router as jobs_router
 from app.api.routes.norm_library import router as norm_library_router
 from app.api.routes.norms import router as norms_router
 from app.api.routes.norm_search import router as norm_search_router
+from app.api.routes.project_ai_settings import router as project_ai_settings_router
 from app.api.routes.projects import router as projects_router
 from app.core.config import settings
 
@@ -18,6 +19,7 @@ app.include_router(norm_library_router)
 app.include_router(norms_router)
 app.include_router(norm_search_router)
 app.include_router(projects_router)
+app.include_router(project_ai_settings_router)
 
 
 @app.get("/health")

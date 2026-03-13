@@ -80,7 +80,8 @@ describe("norms API client", () => {
             page_end: 2,
             summary_text: "Clause text",
             commentary_summary: "",
-            path_labels: ["1", "1.1.1"]
+            path_labels: ["1", "1.1.1"],
+            tags: ["mandatory"]
           }
         ]
       })
@@ -112,7 +113,8 @@ describe("norms API client", () => {
           pageEnd: 2,
           summaryText: "Clause text",
           commentarySummary: "",
-          pathLabels: ["1", "1.1.1"]
+          pathLabels: ["1", "1.1.1"],
+          tags: ["mandatory"]
         }
       ]
     });
@@ -131,7 +133,8 @@ describe("norms API client", () => {
             page_end: 2,
             summary_text: "Clause text",
             commentary_summary: "",
-            path_labels: ["1", "1.1.1"]
+            path_labels: ["1", "1.1.1"],
+            tags: ["mandatory"]
           }
         ]
       })
@@ -159,7 +162,8 @@ describe("norms API client", () => {
           pageEnd: 2,
           summaryText: "Clause text",
           commentarySummary: "",
-          pathLabels: ["1", "1.1.1"]
+          pathLabels: ["1", "1.1.1"],
+          tags: ["mandatory"]
         }
       ]
     });

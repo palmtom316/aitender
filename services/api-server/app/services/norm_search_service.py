@@ -54,6 +54,7 @@ class NormSearchService:
                     "summary_text": entry["summary_text"],
                     "commentary_summary": commentary_text,
                     "path_labels": path_labels,
+                    "tags": entry.get("tags", []),
                 }
             )
 

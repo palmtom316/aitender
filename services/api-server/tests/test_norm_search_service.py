@@ -85,6 +85,7 @@ def test_search_document_uses_repository_backed_results():
                 "summary_text": "Scope clause text that explains the implementation scope.",
                 "commentary_summary": "Commentary for the scope clause.",
                 "path_labels": ["1", "1.1", "1.1.1"],
+                "tags": [],
             }
         ]
     }

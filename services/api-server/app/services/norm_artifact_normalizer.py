@@ -5,7 +5,7 @@ class NormArtifactNormalizer:
     def normalize(self, payload: dict) -> NormalizedNormArtifacts:
         provider = str(payload["provider"])
 
-        if provider == "mineru":
+        if "markdown_text" in payload or "layout_payload" in payload:
             markdown_text = str(payload.get("markdown_text", ""))
             layout_payload = dict(payload.get("layout_payload", {"pages": []}))
             metadata = dict(payload.get("metadata", {}))

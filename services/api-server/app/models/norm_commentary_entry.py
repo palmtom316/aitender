@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class NormCommentaryEntry(BaseModel):
@@ -10,3 +10,5 @@ class NormCommentaryEntry(BaseModel):
     page_start: int | None
     page_end: int | None
     commentary_text: str
+    summary_text: str = ""
+    tags: list[str] = Field(default_factory=list)

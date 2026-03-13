@@ -48,8 +48,16 @@ async def upload_document(
         provider_name=provider_name,
         documents=service,
     )
+    refreshed_document = service.get_document(document.id) or document
+    refreshed_version = service.get_current_version(document.id) or version
+    refreshed_artifact = artifact
+    for candidate in service.list_artifacts_for_version(refreshed_version.id):
+        if candidate.artifact_type == "original_pdf":
+            refreshed_artifact = candidate
+            break
+
     return {
-        "document": document,
-        "version": version,
-        "artifact": artifact,
+        "document": refreshed_document,
+        "version": refreshed_version,
+        "artifact": refreshed_artifact,
     }

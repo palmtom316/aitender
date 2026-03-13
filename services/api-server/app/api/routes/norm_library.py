@@ -1,11 +1,16 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 
 from app.api.dependencies import (
     get_current_user,
+    get_document_service,
     get_norm_library_service,
     get_project_service,
 )
 from app.models.user import AuthenticatedUser
+from app.services.document_service import DocumentService
 from app.services.norm_library_service import NormLibraryService
 from app.services.project_service import ProjectService
 
@@ -55,6 +60,42 @@ def get_norm_document_bundle(
     if bundle is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return bundle
+
+
+@router.get("/documents/{document_id}/file")
+def get_norm_document_file(
+    project_id: str,
+    document_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    project_service: ProjectService = Depends(get_project_service),
+    documents: DocumentService = Depends(get_document_service),
+) -> FileResponse:
+    _assert_project_visible(
+        current_user=current_user,
+        project_id=project_id,
+        project_service=project_service,
+    )
+    document = documents.get_document(document_id)
+    if document is None or document.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    version = documents.get_current_version(document_id)
+    if version is None:
+        raise HTTPException(status_code=404, detail="Document version not found")
+
+    for artifact in documents.list_artifacts_for_version(version.id):
+        if artifact.artifact_type != "original_pdf":
+            continue
+        artifact_path = Path(artifact.storage_path)
+        if not artifact_path.exists():
+            break
+        return FileResponse(
+            path=artifact_path,
+            media_type="application/pdf",
+            filename=document.file_name,
+        )
+
+    raise HTTPException(status_code=404, detail="Original PDF not found")
 
 
 @router.get("/documents/{document_id}/search")

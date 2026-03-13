@@ -181,6 +181,7 @@ def test_postgres_repositories_support_upload_processing_and_query(
                 "summary_text": "Scope clause text that explains the implementation scope.",
                 "commentary_summary": "",
                 "path_labels": ["1", "1.1", "1.1.1"],
+                "tags": [],
             }
         ]
     }

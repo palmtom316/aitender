@@ -32,8 +32,8 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                         insert into norm_clause_entries (
                             document_id, label, title, node_type, parent_label,
                             path_labels, page_start, page_end, summary_text,
-                            commentary_summary
-                        ) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            commentary_summary, tags
+                        ) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """,
                         [
                             entry.document_id,
@@ -46,6 +46,7 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                             entry.page_end,
                             entry.summary_text,
                             entry.commentary_summary,
+                            entry.tags,
                         ],
                     )
 
@@ -65,8 +66,8 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                         """
                         insert into norm_commentary_entries (
                             document_id, label, title, node_type, parent_label,
-                            page_start, page_end, commentary_text
-                        ) values (%s, %s, %s, %s, %s, %s, %s, %s)
+                            page_start, page_end, commentary_text, summary_text, tags
+                        ) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """,
                         [
                             entry.document_id,
@@ -77,6 +78,8 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                             entry.page_start,
                             entry.page_end,
                             entry.commentary_text,
+                            entry.summary_text,
+                            entry.tags,
                         ],
                     )
                     if entry.node_type == "clause":
@@ -99,7 +102,7 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                 cursor.execute(
                     """
                     select document_id, label, title, node_type, parent_label, path_labels,
-                           page_start, page_end, summary_text, commentary_summary
+                           page_start, page_end, summary_text, commentary_summary, tags
                     from norm_clause_entries
                     where document_id = %s
                     order by label
@@ -120,7 +123,7 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                 cursor.execute(
                     """
                     select document_id, label, title, node_type, parent_label,
-                           page_start, page_end, commentary_text
+                           page_start, page_end, commentary_text, summary_text, tags
                     from norm_commentary_entries
                     where document_id = %s
                     order by label
@@ -151,7 +154,8 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                         clause.page_end,
                         clause.summary_text,
                         clause.commentary_summary,
-                        clause.path_labels
+                        clause.path_labels,
+                        clause.tags
                     from norm_clause_entries as clause
                     where clause.document_id = %s
                       and clause.node_type = 'clause'
@@ -190,6 +194,7 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                         "summary_text": row["summary_text"],
                         "commentary_summary": row["commentary_summary"],
                         "path_labels": list(row["path_labels"] or []),
+                        "tags": list(row["tags"] or []),
                     }
                     for row in cursor.fetchall()
                 ]

@@ -57,6 +57,7 @@ create table if not exists norm_clause_entries (
     page_end integer,
     summary_text text not null,
     commentary_summary text not null default '',
+    tags text[] not null default '{}',
     primary key (document_id, label)
 );
 
@@ -65,6 +66,9 @@ alter table norm_clause_entries
 
 alter table norm_clause_entries
     add column if not exists commentary_summary text not null default '';
+
+alter table norm_clause_entries
+    add column if not exists tags text[] not null default '{}';
 
 create index if not exists idx_norm_clause_entries_document_parent
 on norm_clause_entries (document_id, parent_label);
@@ -81,8 +85,16 @@ create table if not exists norm_commentary_entries (
     page_start integer,
     page_end integer,
     commentary_text text not null,
+    summary_text text not null default '',
+    tags text[] not null default '{}',
     primary key (document_id, label)
 );
+
+alter table norm_commentary_entries
+    add column if not exists summary_text text not null default '';
+
+alter table norm_commentary_entries
+    add column if not exists tags text[] not null default '{}';
 
 create index if not exists idx_norm_commentary_entries_document
 on norm_commentary_entries (document_id);

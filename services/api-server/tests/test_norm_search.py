@@ -65,6 +65,7 @@ def test_norm_search_supports_keyword_search_and_returns_preview_fields():
                 "summary_text": "Scope clause text that explains the implementation scope.",
                 "commentary_summary": "Commentary for the scope clause.",
                 "path_labels": ["1", "1.1", "1.1.1"],
+                "tags": [],
             }
         ]
     }
@@ -93,5 +94,6 @@ def test_norm_search_supports_clause_id_and_path_prefix_filters():
             "summary_text": "Scope clause text that explains the implementation scope.",
             "commentary_summary": "Commentary for the scope clause.",
             "path_labels": ["1", "1.1", "1.1.1"],
+            "tags": [],
         }
     ]

@@ -57,6 +57,7 @@ create table if not exists norm_clause_entries (
     page_end integer,
     summary_text text not null,
     commentary_summary text not null default '',
+    content_preview text not null default '',
     tags text[] not null default '{}',
     primary key (document_id, label)
 );
@@ -66,6 +67,9 @@ alter table norm_clause_entries
 
 alter table norm_clause_entries
     add column if not exists commentary_summary text not null default '';
+
+alter table norm_clause_entries
+    add column if not exists content_preview text not null default '';
 
 alter table norm_clause_entries
     add column if not exists tags text[] not null default '{}';

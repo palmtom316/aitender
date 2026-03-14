@@ -12,4 +12,5 @@ class NormClauseEntry(BaseModel):
     page_end: int | None
     summary_text: str
     commentary_summary: str = ""
+    content_preview: str = ""
     tags: list[str] = Field(default_factory=list)

@@ -428,7 +428,7 @@ export function LibraryWorkspace({
 
         <div className={styles.detailColumn}>
           <article className={styles.panel}>
-            <NormDetailPanel result={selectedResult} />
+            <NormDetailPanel result={selectedResult} query={deferredQuery} />
           </article>
           <article aria-label="PDF 原文对比" className={styles.panel} style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", minHeight: "600px" }}>
             <NormPdfViewer

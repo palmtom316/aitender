@@ -108,6 +108,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
             "page_end": 1,
             "summary_text": "General clause text for the project.",
             "commentary_summary": "",
+            "content_preview": "1.0.1 General clause text for the project.",
             "path_labels": ["1", "1.0.1"],
             "tags": [],
         },
@@ -118,6 +119,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
             "page_end": 1,
             "summary_text": "Scope clause text that explains the implementation scope.",
             "commentary_summary": "",
+            "content_preview": "1.1.1 Scope clause text that explains the implementation scope.",
             "path_labels": ["1", "1.1", "1.1.1"],
             "tags": [],
         },
@@ -131,6 +133,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
                 "page_end": 1,
                 "summary_text": "Scope clause text that explains the implementation scope.",
                 "commentary_summary": "",
+                "content_preview": "1.1.1 Scope clause text that explains the implementation scope.",
                 "path_labels": ["1", "1.1", "1.1.1"],
                 "tags": [],
             }

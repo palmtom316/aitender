@@ -113,6 +113,7 @@ describe("norms API client", () => {
           pageEnd: 2,
           summaryText: "Clause text",
           commentarySummary: "",
+          contentPreview: "",
           pathLabels: ["1", "1.1.1"],
           tags: ["mandatory"]
         }
@@ -162,6 +163,7 @@ describe("norms API client", () => {
           pageEnd: 2,
           summaryText: "Clause text",
           commentarySummary: "",
+          contentPreview: "",
           pathLabels: ["1", "1.1.1"],
           tags: ["mandatory"]
         }

@@ -19,19 +19,27 @@ class NormCommentaryBuilder:
         markdown_text: str,
         page_texts: list[dict],
     ) -> dict:
+        markdown_text = self._trim_to_first_numeric_heading(markdown_text)
+
         entries: list[NormCommentaryEntry] = []
         commentary_map: dict[str, str] = {}
         errors: list[str] = []
         current_heading: str | None = None
         known_labels: set[str] = set()
+        skipping_toc = False
 
         for raw_line in markdown_text.splitlines():
             line = raw_line.strip()
             if not line:
                 continue
 
+            if "目次" in line:
+                skipping_toc = True
+                continue
+
             heading_match = HEADING_PATTERN.match(line)
             if heading_match:
+                skipping_toc = False
                 label = heading_match.group(2)
                 title = heading_match.group(3)
                 parent_label = None
@@ -63,9 +71,11 @@ class NormCommentaryBuilder:
                 current_heading = label
                 continue
 
+            if skipping_toc:
+                continue
+
             clause_match = CLAUSE_PATTERN.match(line)
             if not clause_match:
-                errors.append(f"Malformed commentary line: {line}")
                 continue
 
             label = clause_match.group(1)
@@ -97,6 +107,8 @@ class NormCommentaryBuilder:
 
         entry_dicts = [entry.model_dump() for entry in entries]
         return {
+            "summary_text": "",
+            "tree": self._build_tree(entry_dicts),
             "entries": entry_dicts,
             "commentary_map": commentary_map,
             "errors": errors,
@@ -118,3 +130,36 @@ class NormCommentaryBuilder:
                 return section_label
 
         return parts[0]
+
+    @staticmethod
+    def _build_tree(entries: list[dict]) -> list[dict]:
+        nodes = {
+            entry["label"]: {**entry, "children": []}
+            for entry in entries
+        }
+        roots: list[dict] = []
+
+        for entry in entries:
+            node = nodes[entry["label"]]
+            parent_label = entry["parent_label"]
+            if parent_label and parent_label in nodes:
+                nodes[parent_label]["children"].append(node)
+            else:
+                roots.append(node)
+
+        return roots
+
+    @staticmethod
+    def _trim_to_first_numeric_heading(markdown_text: str) -> str:
+        """
+        Commentary parsing should ignore revision intro and other non-structured text.
+        We only start from the first numeric heading (e.g. '# 4 ...').
+        """
+        lines = markdown_text.splitlines()
+        for idx, raw in enumerate(lines):
+            line = raw.lstrip()
+            if line.startswith("# "):
+                rest = line[2:].strip()
+                if rest and rest[0].isdigit():
+                    return "\n".join(lines[idx:]).strip()
+        return markdown_text.strip()

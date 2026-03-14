@@ -10,8 +10,12 @@ from app.services.document_service import DocumentService, document_service
 from app.services.norm_ai_structurer import NormAIStructurer, norm_ai_structurer
 from app.services.norm_artifact_normalizer import NormArtifactNormalizer
 from app.services.norm_artifact_store import NormArtifactStore
+from app.services.norm_ai_scope_patcher import NormAiScopePatcher
+from app.services.norm_commentary_builder import NormCommentaryBuilder
 from app.services.norm_index_builder import NormIndexBuilder
-from app.services.norm_structure_validator import NormStructureValidator
+from app.services.norm_markdown_splitter import NormMarkdownSplitter
+from app.services.norm_toc_parser import NormTocParser
+from app.services.norm_workflow_validator import NormWorkflowValidator
 from app.services.ocr_dispatcher import OCRDispatcher, ocr_dispatcher
 from app.services.project_ai_settings_service import (
     ProjectAiSettingsService,
@@ -84,11 +88,55 @@ def process_norm_document(
                 )
 
                 page_texts = [page.model_dump() for page in normalized.page_texts]
+                segments = NormMarkdownSplitter().split(normalized.markdown_text)
+                toc_expected = NormTocParser().parse_expected_labels(segments.toc_markdown)
+                body_page_texts, commentary_page_texts = _slice_page_texts_for_body_and_commentary(
+                    page_texts
+                )
                 baseline_clause_index = NormIndexBuilder().build(
                     document_id=document_id,
-                    markdown_text=normalized.markdown_text,
-                    page_texts=page_texts,
+                    markdown_text=segments.body_markdown or normalized.markdown_text,
+                    page_texts=body_page_texts,
                 )
+                _populate_content_previews(
+                    clause_index=baseline_clause_index,
+                    page_texts=body_page_texts,
+                )
+                baseline_commentary_result = (
+                    NormCommentaryBuilder().build(
+                        document_id=document_id,
+                        markdown_text=segments.commentary_markdown,
+                        page_texts=commentary_page_texts,
+                    )
+                    if segments.commentary_markdown.strip()
+                    else {
+                        "summary_text": "",
+                        "tree": [],
+                        "entries": [],
+                        "commentary_map": {},
+                        "errors": [],
+                    }
+                )
+                clause_labels = {
+                    entry["label"]
+                    for entry in baseline_clause_index.get("entries", [])
+                    if entry.get("node_type") == "clause" and entry.get("label")
+                }
+                filtered_commentary_map = {
+                    label: text
+                    for label, text in dict(
+                        baseline_commentary_result.get("commentary_map", {})
+                    ).items()
+                    if label in clause_labels
+                }
+                baseline_commentary_result["commentary_map"] = filtered_commentary_map
+                for entry in baseline_clause_index.get("entries", []):
+                    if entry.get("node_type") == "clause":
+                        entry["commentary_summary"] = filtered_commentary_map.get(
+                            entry.get("label", ""),
+                            "",
+                        )
+
                 dispatcher.record_step(
                     job_id=job.id,
                     step="clause_index_built",
@@ -97,44 +145,73 @@ def process_norm_document(
                         f"{len(baseline_clause_index['entries'])} entries"
                     ),
                 )
+                dispatcher.record_step(
+                    job_id=job.id,
+                    step="commentary_built",
+                    message=(
+                        "Built baseline commentary map with "
+                        f"{len(filtered_commentary_map)} clause mappings"
+                    ),
+                )
+
+                workflow_validation = NormWorkflowValidator().validate(
+                    clause_index=baseline_clause_index,
+                    commentary_result=baseline_commentary_result,
+                    expected_chapters=toc_expected.get("expected_chapters", []),
+                    expected_sections=toc_expected.get("expected_sections", []),
+                )
+                dispatcher.record_step(
+                    job_id=job.id,
+                    step="rule_validation_completed",
+                    message=(
+                        "Rule-based validation passed"
+                        if workflow_validation["ok"]
+                        else "Rule-based validation failed"
+                    ),
+                    level="info" if workflow_validation["ok"] else "error",
+                )
+
+                clause_index = baseline_clause_index
+                commentary_result = baseline_commentary_result
 
                 if (
-                    project_settings is not None
+                    not workflow_validation["ok"]
+                    and project_settings is not None
                     and project_settings.analysis.is_configured()
                 ):
                     dispatcher.record_step(
                         job_id=job.id,
-                        step="ai_structure_started",
-                        message="Started AI structure generation",
+                        step="ai_patch_started",
+                        message="Started AI scope patching",
                     )
-                    clause_index, commentary_result = ai_structurer.generate(
+                    clause_index, commentary_result = NormAiScopePatcher(
+                        ai_structurer=ai_structurer
+                    ).patch(
                         document_id=document_id,
                         markdown_text=normalized.markdown_text,
                         page_texts=page_texts,
                         baseline_clause_index=baseline_clause_index,
+                        baseline_commentary_result=baseline_commentary_result,
+                        expected_chapters=toc_expected.get("expected_chapters", []),
+                        expected_sections=toc_expected.get("expected_sections", []),
                         config=project_settings.analysis,
                     )
-                    dispatcher.record_step(
-                        job_id=job.id,
-                        step="ai_structure_completed",
-                        message="AI structure generation completed",
+                    workflow_validation = NormWorkflowValidator().validate(
+                        clause_index=clause_index,
+                        commentary_result=commentary_result,
+                        expected_chapters=toc_expected.get("expected_chapters", []),
+                        expected_sections=toc_expected.get("expected_sections", []),
                     )
-                else:
-                    clause_index = baseline_clause_index
-                    commentary_result = {
-                        "summary_text": "",
-                        "tree": [],
-                        "entries": [],
-                        "commentary_map": {},
-                        "errors": [],
-                    }
                     dispatcher.record_step(
                         job_id=job.id,
-                        step="ai_structure_skipped",
-                        message=(
-                            "AI analysis settings are empty; persisted baseline "
-                            "clause index without AI enrichment"
-                        ),
+                        step="ai_patch_completed",
+                        message="AI scope patching completed",
+                    )
+
+                if not workflow_validation["ok"]:
+                    raise RuntimeError(
+                        "Norm parsing failed validation: "
+                        + "; ".join(workflow_validation.get("errors", []))
                     )
 
                 structure_repository.replace_clause_entries(
@@ -151,30 +228,17 @@ def process_norm_document(
                         for entry in commentary_result["entries"]
                     ],
                 )
-                validation_result = NormStructureValidator().validate(
-                    clause_index=clause_index,
-                    commentary_result=commentary_result,
-                )
                 dispatcher.record_step(
                     job_id=job.id,
-                    step="structure_validated",
-                    message=(
-                        "Structure validation passed"
-                        if validation_result["ok"]
-                        else "Structure validation reported errors"
-                    ),
-                    level="info" if validation_result["ok"] else "error",
+                    step="structure_persisted",
+                    message="Persisted clause/commentary entries",
                 )
 
                 debug_artifacts = [
-                    ("validation_json", "validation.json", validation_result),
+                    ("clause_index_json", "clause_index.json", clause_index),
+                    ("commentary_json", "commentary.json", commentary_result),
+                    ("validation_json", "validation.json", workflow_validation),
                 ]
-                if not structure_repository.supports_persisted_search():
-                    debug_artifacts = [
-                        ("clause_index_json", "clause_index.json", clause_index),
-                        ("commentary_json", "commentary.json", commentary_result),
-                        *debug_artifacts,
-                    ]
 
                 for artifact_type, filename, payload in debug_artifacts:
                     target_path = store.save_json(
@@ -206,3 +270,95 @@ def process_norm_document(
         "indexed" if job.status.value == "completed" else "failed",
     )
     return job, result
+
+
+def _slice_page_texts_for_body_and_commentary(
+    page_texts: list[dict],
+) -> tuple[list[dict], list[dict]]:
+    """
+    Best-effort正文窗口切分:
+    - body starts where we first see "1总则" or "1 总则"
+    - commentary starts where we first see "修订说明"
+    """
+    sorted_pages = sorted(
+        [
+            {"page": int(item.get("page")), "text": str(item.get("text", ""))}
+            for item in page_texts
+            if "page" in item
+        ],
+        key=lambda item: item["page"],
+    )
+    body_start = None
+    revision_start = None
+    for item in sorted_pages:
+        text = item["text"]
+        if body_start is None and ("1总则" in text or "1 总则" in text):
+            body_start = item["page"]
+        if revision_start is None and "修订说明" in text:
+            revision_start = item["page"]
+
+    if sorted_pages and body_start is None:
+        body_start = sorted_pages[0]["page"]
+
+    if revision_start is None:
+        body_pages = [
+            item
+            for item in sorted_pages
+            if body_start is None or item["page"] >= body_start
+        ]
+        commentary_pages: list[dict] = []
+    else:
+        body_pages = [
+            item
+            for item in sorted_pages
+            if body_start is None
+            or (item["page"] >= body_start and item["page"] < revision_start)
+        ]
+        commentary_pages = [
+            item for item in sorted_pages if item["page"] >= revision_start
+        ]
+
+    return body_pages, commentary_pages
+
+
+def _populate_content_previews(*, clause_index: dict, page_texts: list[dict]) -> None:
+    import re
+
+    page_by_number = {
+        int(item.get("page")): str(item.get("text", ""))
+        for item in page_texts
+        if "page" in item
+    }
+    next_label_pattern = re.compile(r"\d+(?:\.\d+)+")
+
+    for entry in clause_index.get("entries", []):
+        if entry.get("node_type") != "clause":
+            continue
+        if entry.get("content_preview"):
+            continue
+
+        label = str(entry.get("label", "")).strip()
+        page_start = entry.get("page_start")
+        if not label or not isinstance(page_start, int):
+            continue
+
+        text = page_by_number.get(page_start, "")
+        if not text:
+            continue
+
+        idx = text.find(label)
+        if idx == -1:
+            entry["content_preview"] = label
+            continue
+
+        end = min(len(text), idx + 800)
+        for match in next_label_pattern.finditer(text, idx + len(label)):
+            next_label = match.group(0)
+            if next_label != label:
+                end = match.start()
+                break
+
+        window = text[idx:end].strip()
+        if len(window) > 320:
+            window = window[:320].rstrip()
+        entry["content_preview"] = window

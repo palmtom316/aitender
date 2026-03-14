@@ -23,6 +23,14 @@ class FakeRemoteOCRService:
                 "1.0.1 General clause text for the project.\n\n"
                 "## 1.1 Scope\n"
                 "1.1.1 Scope clause text that explains the implementation scope.\n"
+                "\n"
+                "# 修订说明\n"
+                "Intro text that should be ignored.\n"
+                "## 目次\n"
+                "1.1 Scope (11)\n"
+                "# 1 General\n"
+                "## 1.1 Scope\n"
+                "1.1.1 Detailed AI commentary\n"
             ),
             "layout_payload": {
                 "pages": [
@@ -227,9 +235,9 @@ def test_process_norm_document_uses_saved_project_ocr_and_ai_settings(
     assert job.provider_name == "configured-ocr"
     assert job.status.value == "completed"
     assert documents.get_document(document.id).status == "indexed"
-    assert "ai_structure_completed" in audit_steps
-    assert target_clause.summary_text == "AI summary for 1.1.1"
+    assert "ai_structure_completed" not in audit_steps
+    assert target_clause.summary_text == "Scope clause text that explains the implementation scope."
     assert target_clause.commentary_summary == "Detailed AI commentary"
-    assert target_clause.tags == ["mandatory"]
+    assert target_clause.tags == []
     assert target_commentary.commentary_text == "Detailed AI commentary"
-    assert target_commentary.tags == ["mandatory"]
+    assert target_commentary.tags == []

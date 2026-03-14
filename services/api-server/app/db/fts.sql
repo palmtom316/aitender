@@ -9,6 +9,7 @@ using gin (
     to_tsvector(
         'simple',
         coalesce(title, '') || ' ' ||
+        coalesce(content_preview, '') || ' ' ||
         coalesce(summary_text, '') || ' ' ||
         coalesce(commentary_summary, '')
     )

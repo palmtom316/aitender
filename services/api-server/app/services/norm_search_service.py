@@ -53,6 +53,7 @@ class NormSearchService:
                     "page_end": entry["page_end"],
                     "summary_text": entry["summary_text"],
                     "commentary_summary": commentary_text,
+                    "content_preview": entry.get("content_preview", ""),
                     "path_labels": path_labels,
                     "tags": entry.get("tags", []),
                 }
@@ -77,7 +78,22 @@ class NormSearchService:
         )
         if items is None:
             return None
-        return {"items": items}
+        normalized = []
+        for item in items:
+            normalized.append(
+                {
+                    "label": item.get("label", ""),
+                    "title": item.get("title", ""),
+                    "page_start": item.get("page_start"),
+                    "page_end": item.get("page_end"),
+                    "summary_text": item.get("summary_text", ""),
+                    "commentary_summary": item.get("commentary_summary", ""),
+                    "content_preview": item.get("content_preview", ""),
+                    "path_labels": list(item.get("path_labels") or []),
+                    "tags": list(item.get("tags") or []),
+                }
+            )
+        return {"items": normalized}
 
     def _build_path_labels(
         self,

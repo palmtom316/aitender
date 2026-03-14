@@ -10,6 +10,7 @@ from app.services.document_service import DocumentService, document_service
 from app.services.norm_ai_structurer import NormAIStructurer, norm_ai_structurer
 from app.services.norm_artifact_normalizer import NormArtifactNormalizer
 from app.services.norm_artifact_store import NormArtifactStore
+from app.services.norm_ai_scope_patcher import NormAiScopePatcher
 from app.services.norm_commentary_builder import NormCommentaryBuilder
 from app.services.norm_index_builder import NormIndexBuilder
 from app.services.norm_markdown_splitter import NormMarkdownSplitter
@@ -176,14 +177,19 @@ def process_norm_document(
                 ):
                     dispatcher.record_step(
                         job_id=job.id,
-                        step="ai_structure_started",
-                        message="Started AI fallback structure generation",
+                        step="ai_patch_started",
+                        message="Started AI scope patching",
                     )
-                    clause_index, commentary_result = ai_structurer.generate(
+                    clause_index, commentary_result = NormAiScopePatcher(
+                        ai_structurer=ai_structurer
+                    ).patch(
                         document_id=document_id,
                         markdown_text=normalized.markdown_text,
                         page_texts=page_texts,
                         baseline_clause_index=baseline_clause_index,
+                        baseline_commentary_result=baseline_commentary_result,
+                        expected_chapters=toc_expected.get("expected_chapters", []),
+                        expected_sections=toc_expected.get("expected_sections", []),
                         config=project_settings.analysis,
                     )
                     workflow_validation = NormWorkflowValidator().validate(
@@ -194,8 +200,8 @@ def process_norm_document(
                     )
                     dispatcher.record_step(
                         job_id=job.id,
-                        step="ai_structure_completed",
-                        message="AI fallback structure generation completed",
+                        step="ai_patch_completed",
+                        message="AI scope patching completed",
                     )
 
                 if not workflow_validation["ok"]:

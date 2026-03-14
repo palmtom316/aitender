@@ -50,3 +50,14 @@ class NormStructureRepository(ABC):
         path_prefix: str | None = None,
     ) -> list[dict] | None:
         raise NotImplementedError
+
+    @abstractmethod
+    def search_commentary_results(
+        self,
+        *,
+        document_id: str,
+        query: str | None = None,
+        clause_id: str | None = None,
+        path_prefix: str | None = None,
+    ) -> list[dict] | None:
+        raise NotImplementedError

@@ -15,6 +15,7 @@ class NormAIStructurer:
         markdown_text: str,
         page_texts: list[dict],
         baseline_clause_index: dict,
+        baseline_commentary_result: dict,
         config: ProviderApiConfig,
     ) -> tuple[dict, dict]:
         payload = self._post_json(
@@ -26,6 +27,7 @@ class NormAIStructurer:
                 markdown_text=markdown_text,
                 page_texts=page_texts,
                 baseline_clause_index=baseline_clause_index,
+                baseline_commentary_result=baseline_commentary_result,
             ),
         )
         data = self._extract_json_payload(payload)
@@ -41,6 +43,7 @@ class NormAIStructurer:
         markdown_text: str,
         page_texts: list[dict],
         baseline_clause_index: dict,
+        baseline_commentary_result: dict,
     ) -> dict:
         return {
             "model": model,
@@ -71,6 +74,7 @@ class NormAIStructurer:
                             "markdown_text": markdown_text,
                             "page_texts": page_texts,
                             "baseline_clause_index": baseline_clause_index,
+                            "baseline_commentary_result": baseline_commentary_result,
                         },
                         ensure_ascii=False,
                     ),

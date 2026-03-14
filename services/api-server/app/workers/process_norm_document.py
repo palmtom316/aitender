@@ -29,6 +29,7 @@ def process_norm_document(
     document_id: str,
     document_path: Path,
     provider_name: str,
+    existing_job_id: str | None = None,
     dispatcher: OCRDispatcher = ocr_dispatcher,
     documents: DocumentService = document_service,
     structure_repository: NormStructureRepository | None = None,
@@ -57,6 +58,7 @@ def process_norm_document(
         document_path=document_path,
         provider_name=runtime_provider_name,
         extract_override=extract_override,
+        existing_job_id=existing_job_id,
     )
     documents.update_latest_job(document_id, job.id)
 
@@ -188,8 +190,10 @@ def process_norm_document(
                         ai_structurer=ai_structurer
                     ).patch(
                         document_id=document_id,
-                        markdown_text=normalized.markdown_text,
-                        page_texts=page_texts,
+                        body_markdown=segments.body_markdown or normalized.markdown_text,
+                        commentary_markdown=segments.commentary_markdown,
+                        body_page_texts=body_page_texts,
+                        commentary_page_texts=commentary_page_texts,
                         baseline_clause_index=baseline_clause_index,
                         baseline_commentary_result=baseline_commentary_result,
                         expected_chapters=toc_expected.get("expected_chapters", []),
@@ -238,6 +242,16 @@ def process_norm_document(
                     ("clause_index_json", "clause_index.json", clause_index),
                     ("commentary_json", "commentary.json", commentary_result),
                     ("validation_json", "validation.json", workflow_validation),
+                    (
+                        "quality_report_json",
+                        "quality_report.json",
+                        {
+                            "ok": workflow_validation.get("ok", False),
+                            "errors": list(workflow_validation.get("errors", [])),
+                            "warnings": list(workflow_validation.get("warnings", [])),
+                            "stats": dict(workflow_validation.get("stats", {})),
+                        },
+                    ),
                 ]
 
                 for artifact_type, filename, payload in debug_artifacts:
@@ -252,6 +266,10 @@ def process_norm_document(
                         artifact_type=artifact_type,
                         storage_path=str(target_path),
                     )
+                dispatcher.mark_job_status(
+                    job,
+                    status=NormProcessingJobStatus.COMPLETED,
+                )
         except Exception as exc:
             dispatcher.mark_job_status(
                 job,

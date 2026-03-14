@@ -48,7 +48,7 @@ class FakeNormSearchService:
                 "path_prefix": path_prefix,
             }
         )
-        return {"items": []}
+        return {"items": [], "commentary_items": []}
 
 
 def test_query_norm_uses_repository_backed_search_when_payload_omits_json(monkeypatch):
@@ -65,7 +65,8 @@ def test_query_norm_uses_repository_backed_search_when_payload_omits_json(monkey
                     "path_labels": ["1", "1.1", "1.1.1"],
                     "tags": [],
                 }
-            ]
+            ],
+            "commentary_items": []
         }
     )
     monkeypatch.setattr("app.api.routes.norm_search.norm_search_service", fake_service)

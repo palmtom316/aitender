@@ -88,6 +88,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
     assert "clause_index_json" in artifact_types
     assert "commentary_json" in artifact_types
     assert "validation_json" in artifact_types
+    assert "quality_report_json" in artifact_types
     assert documents_list == [
         {
             "id": document.id,
@@ -100,6 +101,7 @@ def test_norm_library_service_reads_documents_bundle_and_search(
     assert bundle is not None
     assert bundle["document"]["latest_job_id"] == job.id
     assert bundle["tree"][0]["label"] == "1"
+    assert bundle["commentary_results"] == []
     assert bundle["results"] == [
         {
             "label": "1.0.1",
@@ -137,5 +139,6 @@ def test_norm_library_service_reads_documents_bundle_and_search(
                 "path_labels": ["1", "1.1", "1.1.1"],
                 "tags": [],
             }
-        ]
+        ],
+        "commentary_items": []
     }

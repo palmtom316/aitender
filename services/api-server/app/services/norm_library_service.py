@@ -5,6 +5,7 @@ from app.models.norm_clause_entry import NormClauseEntry
 from app.models.norm_commentary_entry import NormCommentaryEntry
 from app.repositories.factory import get_norm_structure_repository
 from app.repositories.norm_structure_repository import NormStructureRepository
+from app.services.norm_label_utils import label_sort_key
 from app.services.document_service import DocumentService, document_service
 from app.services.norm_search_service import NormSearchService, norm_search_service
 
@@ -47,6 +48,15 @@ class NormLibraryService:
         persisted_result = self._search.search_document(
             document_id=document_id,
         )
+        fallback_result = (
+            self._search.search(
+                document_id=document_id,
+                clause_index=clause_index,
+                commentary_result=commentary_result,
+            )
+            if persisted_result is None
+            else None
+        )
         return {
             "document": {
                 "id": document.id,
@@ -58,11 +68,10 @@ class NormLibraryService:
             "tree": clause_index.get("tree", []),
             "results": persisted_result["items"]
             if persisted_result is not None
-            else self._search.search(
-                document_id=document_id,
-                clause_index=clause_index,
-                commentary_result=commentary_result,
-            )["items"],
+            else fallback_result["items"],
+            "commentary_results": persisted_result.get("commentary_items", [])
+            if persisted_result is not None
+            else fallback_result["commentary_items"],
         }
 
     def search(
@@ -153,6 +162,7 @@ class NormLibraryService:
     @staticmethod
     def _clause_index_from_entries(entries: list[NormClauseEntry]) -> dict:
         entry_dicts = [entry.model_dump(mode="json") for entry in entries]
+        entry_dicts.sort(key=lambda entry: label_sort_key(entry["label"]))
         nodes = {
             entry["label"]: {**entry, "children": []}
             for entry in entry_dicts
@@ -174,6 +184,7 @@ class NormLibraryService:
         entries: list[NormCommentaryEntry],
     ) -> dict:
         entry_dicts = [entry.model_dump(mode="json") for entry in entries]
+        entry_dicts.sort(key=lambda entry: label_sort_key(entry["label"]))
         nodes = {
             entry["label"]: {**entry, "children": []}
             for entry in entry_dicts

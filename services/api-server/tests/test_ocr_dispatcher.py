@@ -35,7 +35,7 @@ def test_dispatcher_uses_selected_provider_and_returns_unified_result(tmp_path: 
         provider_name="mineru",
     )
 
-    assert job.status == NormProcessingJobStatus.COMPLETED
+    assert job.status == NormProcessingJobStatus.RUNNING
     assert job.provider_name == "mineru"
     assert result == {
         "provider": "mineru",

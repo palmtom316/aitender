@@ -7,6 +7,7 @@ from app.models.norm_clause_entry import NormClauseEntry
 from app.models.norm_commentary_entry import NormCommentaryEntry
 from app.repositories.json_state_store import JsonStateStore
 from app.repositories.norm_structure_repository import NormStructureRepository
+from app.services.norm_label_utils import label_sort_key
 
 
 class JsonNormStructureRepository(NormStructureRepository):
@@ -116,7 +117,59 @@ class JsonNormStructureRepository(NormStructureRepository):
                 }
             )
 
-        results.sort(key=lambda item: item["label"])
+        results.sort(key=lambda item: label_sort_key(item["label"]))
+        return results
+
+    def search_commentary_results(
+        self,
+        *,
+        document_id: str,
+        query: str | None = None,
+        clause_id: str | None = None,
+        path_prefix: str | None = None,
+    ) -> list[dict] | None:
+        clause_entries = {entry.label: entry for entry in self.list_clause_entries(document_id)}
+        commentary_entries = self.list_commentary_entries(document_id)
+        if not commentary_entries:
+            return None
+
+        results: list[dict] = []
+        tokens = [token for token in (query or "").lower().split() if token]
+
+        for commentary in commentary_entries:
+            if commentary.node_type != "clause":
+                continue
+            clause_entry = clause_entries.get(commentary.label)
+            if clause_entry is None:
+                continue
+            if clause_id and commentary.label != clause_id:
+                continue
+            if path_prefix and path_prefix not in (clause_entry.path_labels or []):
+                continue
+            haystack = " ".join(
+                [
+                    commentary.commentary_text or "",
+                    commentary.summary_text or "",
+                ]
+            ).lower()
+            if tokens and not all(token in haystack for token in tokens):
+                continue
+
+            results.append(
+                {
+                    "label": clause_entry.label,
+                    "title": clause_entry.title,
+                    "page_start": clause_entry.page_start,
+                    "page_end": clause_entry.page_end,
+                    "summary_text": clause_entry.summary_text,
+                    "commentary_summary": commentary.commentary_text,
+                    "content_preview": clause_entry.content_preview,
+                    "path_labels": list(clause_entry.path_labels or []),
+                    "tags": list(clause_entry.tags or []),
+                }
+            )
+
+        results.sort(key=lambda item: label_sort_key(item["label"]))
         return results
 
     @staticmethod

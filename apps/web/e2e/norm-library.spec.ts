@@ -58,10 +58,12 @@ vi.mock("../src/lib/api/norms", () => ({
         pageEnd: 2,
         summaryText: "Scope clause text that explains the implementation scope.",
         commentarySummary: "Commentary for the scope clause.",
+        contentPreview: "1.1.1 Scope clause text that explains the implementation scope.",
         pathLabels: ["1", "1.1", "1.1.1"],
         tags: ["mandatory"]
       }
-    ]
+    ],
+    commentaryResults: []
   }),
   getProcessingJobStatus: vi.fn().mockResolvedValue({
     id: "norm-job-1",
@@ -79,10 +81,12 @@ vi.mock("../src/lib/api/norms", () => ({
         pageEnd: 2,
         summaryText: "Scope clause text that explains the implementation scope.",
         commentarySummary: "Commentary for the scope clause.",
+        contentPreview: "1.1.1 Scope clause text that explains the implementation scope.",
         pathLabels: ["1", "1.1", "1.1.1"],
         tags: ["mandatory"]
       }
-    ]
+    ],
+    commentaryItems: []
   }),
   uploadNormDocument: vi.fn()
 }));

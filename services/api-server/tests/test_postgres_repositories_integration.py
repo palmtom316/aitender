@@ -164,9 +164,10 @@ def test_postgres_repositories_support_upload_processing_and_query(
     ]
     assert raw_result is not None
     assert job.status.value == "completed"
-    assert "clause_index_json" not in artifact_types
-    assert "commentary_json" not in artifact_types
+    assert "clause_index_json" in artifact_types
+    assert "commentary_json" in artifact_types
     assert "validation_json" in artifact_types
+    assert "quality_report_json" in artifact_types
     assert bundle is not None
     assert bundle["document"]["latest_job_id"] == job.id
     assert bundle["results"][0]["label"] == "1.0.1"
@@ -180,9 +181,10 @@ def test_postgres_repositories_support_upload_processing_and_query(
                 "page_end": 1,
                 "summary_text": "Scope clause text that explains the implementation scope.",
                 "commentary_summary": "",
-                "content_preview": "",
+                "content_preview": "1.1.1 Scope clause text that explains the implementation scope.",
                 "path_labels": ["1", "1.1", "1.1.1"],
                 "tags": [],
             }
-        ]
+        ],
+        "commentary_items": []
     }

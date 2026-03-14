@@ -68,7 +68,8 @@ def test_norm_search_supports_keyword_search_and_returns_preview_fields():
                 "path_labels": ["1", "1.1", "1.1.1"],
                 "tags": [],
             }
-        ]
+        ],
+        "commentary_items": []
     }
 
 
@@ -99,3 +100,4 @@ def test_norm_search_supports_clause_id_and_path_prefix_filters():
             "tags": [],
         }
     ]
+    assert response.json()["commentary_items"] == []

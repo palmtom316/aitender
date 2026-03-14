@@ -42,7 +42,7 @@ def reset_processing_services():
     audit_service.reset()
 
 
-def test_job_status_endpoint_returns_completed_job_and_audit_logs(tmp_path: Path):
+def test_job_status_endpoint_returns_running_job_after_ocr_stage(tmp_path: Path):
     source_file = tmp_path / "norm.pdf"
     source_file.write_bytes(b"%PDF-1.7 sample")
     job, _ = ocr_dispatcher.process_document(
@@ -60,7 +60,7 @@ def test_job_status_endpoint_returns_completed_job_and_audit_logs(tmp_path: Path
             "id": job.id,
             "document_id": "doc-1",
             "provider_name": "mineru",
-            "status": "completed",
+            "status": "running",
             "error_message": None,
         },
         "audit_logs": [

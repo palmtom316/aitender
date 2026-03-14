@@ -2,6 +2,7 @@ from app.models.norm_clause_entry import NormClauseEntry
 from app.models.norm_commentary_entry import NormCommentaryEntry
 from app.repositories.norm_structure_repository import NormStructureRepository
 from app.repositories.postgres_base import PostgresRepositoryBase
+from app.services.norm_label_utils import label_sort_key
 
 
 class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepository):
@@ -111,10 +112,12 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                     """,
                     [document_id],
                 )
-                return [
+                items = [
                     NormClauseEntry.model_validate(row)
                     for row in cursor.fetchall()
                 ]
+                items.sort(key=lambda item: label_sort_key(item.label))
+                return items
 
     def list_commentary_entries(
         self,
@@ -132,10 +135,12 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                     """,
                     [document_id],
                 )
-                return [
+                items = [
                     NormCommentaryEntry.model_validate(row)
                     for row in cursor.fetchall()
                 ]
+                items.sort(key=lambda item: label_sort_key(item.label))
+                return items
 
     def search_clause_results(
         self,
@@ -188,7 +193,7 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                         query,
                     ],
                 )
-                return [
+                items = [
                     {
                         "label": row["label"],
                         "title": row["title"],
@@ -202,6 +207,77 @@ class PostgresNormStructureRepository(PostgresRepositoryBase, NormStructureRepos
                     }
                     for row in cursor.fetchall()
                 ]
+                items.sort(key=lambda item: label_sort_key(item["label"]))
+                return items
+
+    def search_commentary_results(
+        self,
+        *,
+        document_id: str,
+        query: str | None = None,
+        clause_id: str | None = None,
+        path_prefix: str | None = None,
+    ) -> list[dict] | None:
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    select
+                        clause.label,
+                        clause.title,
+                        clause.page_start,
+                        clause.page_end,
+                        clause.summary_text,
+                        commentary.commentary_text as commentary_summary,
+                        clause.content_preview,
+                        clause.path_labels,
+                        clause.tags
+                    from norm_commentary_entries as commentary
+                    join norm_clause_entries as clause
+                      on clause.document_id = commentary.document_id
+                     and clause.label = commentary.label
+                    where commentary.document_id = %s
+                      and commentary.node_type = 'clause'
+                      and (%s::text is null or commentary.label = %s::text)
+                      and (
+                        %s::text is null
+                        or clause.path_labels @> array[%s::text]
+                      )
+                      and (
+                        %s::text is null
+                        or to_tsvector(
+                            'simple',
+                            coalesce(commentary.commentary_text, '') || ' ' ||
+                            coalesce(commentary.summary_text, '')
+                        ) @@ plainto_tsquery('simple', %s::text)
+                      )
+                    """,
+                    [
+                        document_id,
+                        clause_id,
+                        clause_id,
+                        path_prefix,
+                        path_prefix,
+                        query,
+                        query,
+                    ],
+                )
+                items = [
+                    {
+                        "label": row["label"],
+                        "title": row["title"],
+                        "page_start": row["page_start"],
+                        "page_end": row["page_end"],
+                        "summary_text": row["summary_text"],
+                        "commentary_summary": row["commentary_summary"],
+                        "content_preview": row["content_preview"],
+                        "path_labels": list(row["path_labels"] or []),
+                        "tags": list(row["tags"] or []),
+                    }
+                    for row in cursor.fetchall()
+                ]
+                items.sort(key=lambda item: label_sort_key(item["label"]))
+                return items
 
     @staticmethod
     def _build_path_labels_by_label(

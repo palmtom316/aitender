@@ -31,11 +31,12 @@ export type NormDocumentBundle = {
   document: NormDocument;
   tree: NormTreeNode[];
   results: NormSearchResult[];
+  commentaryResults: NormSearchResult[];
 };
 
 export type ProcessingJobView = {
   id: string;
-  status: "completed" | "failed" | "running";
+  status: "completed" | "failed" | "running" | "pending";
   providerName: string;
   errorMessage: string | null;
   auditSteps: string[];
@@ -45,7 +46,7 @@ type ProcessingJobApiResponse = {
   job: {
     id: string;
     provider_name: string;
-    status: "completed" | "failed" | "running";
+    status: "completed" | "failed" | "running" | "pending";
     error_message: string | null;
   };
   audit_logs: Array<{
@@ -83,6 +84,7 @@ type NormDocumentBundleApiResponse = {
   document: NormDocumentApiResponse;
   tree: NormTreeApiNode[];
   results: NormSearchResultApiResponse[];
+  commentary_results?: NormSearchResultApiResponse[];
 };
 
 type UploadNormDocumentApiResponse = {
@@ -309,7 +311,8 @@ export async function getNormDocumentBundle(
     return {
       document: mapDocument(payload.document),
       tree: mapTree(payload.tree),
-      results: payload.results.map(mapSearchResult)
+      results: payload.results.map(mapSearchResult),
+      commentaryResults: (payload.commentary_results ?? []).map(mapSearchResult)
     };
   }
 
@@ -321,7 +324,8 @@ export async function getNormDocumentBundle(
   return {
     document,
     tree: MOCK_TREE,
-    results: MOCK_RESULTS
+    results: MOCK_RESULTS,
+    commentaryResults: []
   };
 }
 
@@ -332,7 +336,7 @@ export async function searchNorms(options: {
   clauseId?: string;
   pathPrefix?: string;
   accessToken?: string;
-}): Promise<{ items: NormSearchResult[] }> {
+}): Promise<{ items: NormSearchResult[]; commentaryItems: NormSearchResult[] }> {
   const baseUrl = getApiBaseUrl();
   if (baseUrl) {
     const params = new URLSearchParams();
@@ -361,9 +365,11 @@ export async function searchNorms(options: {
 
     const payload = (await response.json()) as {
       items: NormSearchResultApiResponse[];
+      commentary_items?: NormSearchResultApiResponse[];
     };
     return {
-      items: payload.items.map(mapSearchResult)
+      items: payload.items.map(mapSearchResult),
+      commentaryItems: (payload.commentary_items ?? []).map(mapSearchResult)
     };
   }
 
@@ -376,7 +382,7 @@ export async function searchNorms(options: {
     items = items.filter((item) => item.pathLabels.includes(options.pathPrefix!));
   }
   if (!normalizedQuery) {
-    return { items };
+    return { items, commentaryItems: [] };
   }
 
   return {
@@ -393,7 +399,8 @@ export async function searchNorms(options: {
         .toLowerCase();
 
       return normalizedQuery.split(/\s+/).every((token) => haystack.includes(token));
-    })
+    }),
+    commentaryItems: []
   };
 }
 

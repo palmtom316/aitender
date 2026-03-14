@@ -74,6 +74,13 @@ def test_norm_ai_structurer_normalizes_openai_style_json_response():
             ],
             "tree": [],
         },
+        baseline_commentary_result={
+            "summary_text": "",
+            "entries": [],
+            "tree": [],
+            "commentary_map": {},
+            "errors": [],
+        },
         config=ProviderApiConfig(
             base_url="https://ai.example.test/v1",
             api_key="secret",

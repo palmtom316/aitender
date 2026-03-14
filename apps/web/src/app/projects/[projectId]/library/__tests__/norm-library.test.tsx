@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
 import LibraryPage from "../page";
@@ -76,10 +76,12 @@ const defaultBundle = {
       pageEnd: 2,
       summaryText: "Scope clause text that explains the implementation scope.",
       commentarySummary: "Commentary for the scope clause.",
+      contentPreview: "1.1.1 Scope clause text that explains the implementation scope.",
       pathLabels: ["1", "1.1", "1.1.1"],
       tags: ["mandatory"]
     }
-  ]
+  ],
+  commentaryResults: []
 };
 
 describe("NormLibraryPage", () => {
@@ -93,7 +95,10 @@ describe("NormLibraryPage", () => {
       errorMessage: null,
       auditSteps: ["job_started", "ocr_completed"]
     });
-    searchNormsMock.mockResolvedValue({ items: defaultBundle.results });
+    searchNormsMock.mockResolvedValue({
+      items: defaultBundle.results,
+      commentaryItems: []
+    });
     uploadNormDocumentMock.mockResolvedValue(defaultDocuments[0]);
   });
 
@@ -178,5 +183,89 @@ describe("NormLibraryPage", () => {
     expect(
       await screen.findByText("Failed to load search results.")
     ).toBeInTheDocument();
+  });
+
+  it("polls processing jobs until the active document completes", async () => {
+    vi.useFakeTimers();
+    const processingDocument = {
+      id: "doc-2",
+      fileName: "async-standard.pdf",
+      latestJobId: "norm-job-2",
+      status: "processing",
+      libraryType: "norm_library"
+    };
+    const processingBundle = {
+      ...defaultBundle,
+      document: processingDocument,
+      results: [],
+      commentaryResults: []
+    };
+    const completedDocument = {
+      ...processingDocument,
+      status: "indexed"
+    };
+    const completedBundle = {
+      ...defaultBundle,
+      document: completedDocument
+    };
+
+    listNormDocumentsMock
+      .mockResolvedValueOnce([processingDocument, ...defaultDocuments])
+      .mockResolvedValueOnce([completedDocument, ...defaultDocuments]);
+    getNormDocumentBundleMock
+      .mockResolvedValueOnce(processingBundle)
+      .mockResolvedValueOnce(completedBundle);
+    getProcessingJobStatusMock
+      .mockResolvedValueOnce({
+        id: "norm-job-2",
+        status: "running",
+        providerName: "configured-ocr",
+        errorMessage: null,
+        auditSteps: ["job_started"]
+      })
+      .mockResolvedValueOnce({
+        id: "norm-job-2",
+        status: "completed",
+        providerName: "configured-ocr",
+        errorMessage: null,
+        auditSteps: ["job_started", "ocr_completed", "structure_persisted"]
+      })
+      .mockResolvedValueOnce({
+        id: "norm-job-2",
+        status: "completed",
+        providerName: "configured-ocr",
+        errorMessage: null,
+        auditSteps: ["job_started", "ocr_completed", "structure_persisted"]
+      });
+    uploadNormDocumentMock.mockResolvedValueOnce(processingDocument);
+
+    try {
+      render(
+        await LibraryPage({
+          params: Promise.resolve({ projectId: "project-alpha" })
+        })
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(
+        getProcessingJobStatusMock.mock.calls.filter(
+          ([jobId]) => jobId === "norm-job-2"
+        ).length
+      ).toBeGreaterThanOrEqual(2);
+      expect(listNormDocumentsMock).toHaveBeenCalledWith("project-alpha");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

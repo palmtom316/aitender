@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useDeferredValue, useState } from "react";
+import React, { useDeferredValue, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type {
@@ -12,6 +12,7 @@ import type {
 import {
   getNormDocumentBundle,
   getProcessingJobStatus,
+  listNormDocuments,
   searchNorms,
   uploadNormDocument
 } from "../../lib/api/norms";
@@ -45,6 +46,9 @@ export function LibraryWorkspace({
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [results, setResults] = useState(initialBundle?.results ?? []);
+  const [commentaryResults, setCommentaryResults] = useState(
+    initialBundle?.commentaryResults ?? []
+  );
   const [selectedResult, setSelectedResult] = useState<NormSearchResult | null>(
     initialBundle?.results[0] ?? null
   );
@@ -67,6 +71,26 @@ export function LibraryWorkspace({
     activeDocument && getApiBaseUrl()
       ? `${getApiBaseUrl()}/projects/${projectId}/norm-library/documents/${activeDocument.id}/file`
       : "";
+
+  async function refreshDocumentSnapshot(documentId: string) {
+    const nextDocuments = await listNormDocuments(projectId);
+    setAllDocuments(nextDocuments);
+    const nextActiveDocument =
+      nextDocuments.find((document) => document.id === documentId) ?? null;
+    if (!nextActiveDocument) {
+      return;
+    }
+    const nextBundle = await getNormDocumentBundle(projectId, documentId);
+    const nextJob = nextActiveDocument.latestJobId
+      ? await getProcessingJobStatus(nextActiveDocument.latestJobId)
+      : null;
+    setActiveDocumentId(documentId);
+    setBundle(nextBundle);
+    setJob(nextJob);
+    setResults(nextBundle?.results ?? []);
+    setCommentaryResults(nextBundle?.commentaryResults ?? []);
+    setSelectedResult(nextBundle?.results[0] ?? null);
+  }
 
   async function loadDocument(document: NormDocument) {
     setActiveDocumentId(document.id);
@@ -91,6 +115,7 @@ export function LibraryWorkspace({
       setBundle(nextBundle);
       setJob(nextJob);
       setResults(nextBundle.results);
+      setCommentaryResults(nextBundle.commentaryResults ?? []);
       setSelectedResult(nextBundle.results[0] ?? null);
     } catch {
       setWorkspaceError("无法加载所选文档的资料库内容。");
@@ -98,6 +123,52 @@ export function LibraryWorkspace({
       setIsSwitchingDocument(false);
     }
   }
+
+  useEffect(() => {
+    if (!activeDocumentId || !activeDocument?.latestJobId || !job) {
+      return;
+    }
+    if (job.status !== "pending" && job.status !== "running") {
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const poll = async () => {
+      try {
+        const nextJob = await getProcessingJobStatus(activeDocument.latestJobId!);
+        if (cancelled) {
+          return;
+        }
+        setJob(nextJob);
+        if (nextJob.status === "pending" || nextJob.status === "running") {
+          timer = setTimeout(() => {
+            void poll();
+          }, 1500);
+          return;
+        }
+        await refreshDocumentSnapshot(activeDocumentId);
+      } catch {
+        if (!cancelled) {
+          timer = setTimeout(() => {
+            void poll();
+          }, 3000);
+        }
+      }
+    };
+
+    timer = setTimeout(() => {
+      void poll();
+    }, 1500);
+
+    return () => {
+      cancelled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [activeDocument, activeDocumentId, job, projectId, refreshDocumentSnapshot]);
 
   function handleDocumentSelect(document: NormDocument) {
     if (document.id === activeDocumentId) {
@@ -117,6 +188,7 @@ export function LibraryWorkspace({
     if (!query.trim()) {
       setSearchError(null);
       setResults(bundle?.results ?? []);
+      setCommentaryResults(bundle?.commentaryResults ?? []);
       setSelectedResult(bundle?.results[0] ?? null);
       return;
     }
@@ -129,6 +201,7 @@ export function LibraryWorkspace({
       });
       setSearchError(null);
       setResults(response.items);
+      setCommentaryResults(response.commentaryItems);
       setSelectedResult(response.items[0] ?? null);
     } catch {
       setSearchError("Failed to load search results.");
@@ -139,6 +212,7 @@ export function LibraryWorkspace({
     setQuery("");
     setSearchError(null);
     setResults(bundle?.results ?? []);
+    setCommentaryResults(bundle?.commentaryResults ?? []);
     setSelectedResult(bundle?.results[0] ?? null);
   }
 
@@ -162,6 +236,7 @@ export function LibraryWorkspace({
         pathPrefix: label
       });
       setResults(response.items);
+      setCommentaryResults(response.commentaryItems);
       setSelectedResult(response.items[0] ?? null);
       setSearchError(null);
     } catch {
@@ -400,6 +475,30 @@ export function LibraryWorkspace({
                       {result.label} {result.title}
                     </strong>
                     <span>{result.summaryText}</span>
+                  </button>
+                ))}
+              </div>
+              <div className={styles.subPanelHeader} style={{ marginTop: "1rem" }}>
+                <h4>Commentary matches</h4>
+                <span>{commentaryResults.length} 条</span>
+              </div>
+              <div className={styles.resultList}>
+                {commentaryResults.map((result) => (
+                  <button
+                    aria-pressed={selectedResult?.label === result.label}
+                    className={`${styles.resultButton} ${
+                      selectedResult?.label === result.label
+                        ? styles.resultButtonActive
+                        : ""
+                    }`}
+                    key={`commentary-${result.label}`}
+                    onClick={() => setSelectedResult(result)}
+                    type="button"
+                  >
+                    <strong>
+                      {result.label} {result.title}
+                    </strong>
+                    <span>{result.commentarySummary}</span>
                   </button>
                 ))}
               </div>

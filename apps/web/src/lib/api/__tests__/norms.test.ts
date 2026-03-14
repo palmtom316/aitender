@@ -83,7 +83,8 @@ describe("norms API client", () => {
             path_labels: ["1", "1.1.1"],
             tags: ["mandatory"]
           }
-        ]
+        ],
+        commentary_results: []
       })
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -117,7 +118,8 @@ describe("norms API client", () => {
           pathLabels: ["1", "1.1.1"],
           tags: ["mandatory"]
         }
-      ]
+      ],
+      commentaryResults: []
     });
   });
 
@@ -137,7 +139,8 @@ describe("norms API client", () => {
             path_labels: ["1", "1.1.1"],
             tags: ["mandatory"]
           }
-        ]
+        ],
+        commentary_items: []
       })
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -167,7 +170,8 @@ describe("norms API client", () => {
           pathLabels: ["1", "1.1.1"],
           tags: ["mandatory"]
         }
-      ]
+      ],
+      commentaryItems: []
     });
   });
 

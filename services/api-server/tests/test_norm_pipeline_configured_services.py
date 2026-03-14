@@ -59,6 +59,7 @@ class FakeNormAIStructurer:
         markdown_text: str,
         page_texts: list[dict],
         baseline_clause_index: dict,
+        baseline_commentary_result: dict,
         config,
     ):
         entries = []
@@ -154,6 +155,9 @@ class InMemoryNormStructureRepository(NormStructureRepository):
     def search_clause_results(self, **kwargs):
         return None
 
+    def search_commentary_results(self, **kwargs):
+        return None
+
 
 def test_process_norm_document_uses_saved_project_ocr_and_ai_settings(
     tmp_path: Path,
@@ -236,8 +240,8 @@ def test_process_norm_document_uses_saved_project_ocr_and_ai_settings(
     assert job.status.value == "completed"
     assert documents.get_document(document.id).status == "indexed"
     assert "ai_structure_completed" not in audit_steps
-    assert target_clause.summary_text == "Scope clause text that explains the implementation scope."
+    assert target_clause.summary_text == "AI summary for 1.1.1"
     assert target_clause.commentary_summary == "Detailed AI commentary"
-    assert target_clause.tags == []
+    assert target_clause.tags == ["mandatory"]
     assert target_commentary.commentary_text == "Detailed AI commentary"
-    assert target_commentary.tags == []
+    assert target_commentary.tags == ["mandatory"]

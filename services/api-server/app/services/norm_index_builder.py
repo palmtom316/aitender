@@ -1,12 +1,12 @@
 import re
 
 from app.models.norm_clause_entry import NormClauseEntry
+from app.services.norm_label_utils import label_sort_key, parse_heading_text
 from app.services.norm_markdown_splitter import NormMarkdownSplitter
 from app.services.norm_page_locator import NormLocateRequest, NormPageLocator
 from app.services.norm_summary_builder import NormSummaryBuilder
 
 
-HEADING_PATTERN = re.compile(r"^(#+)\s+(\d+(?:\.\d+)*)\s+(.+)$")
 CLAUSE_PATTERN = re.compile(r"^(\d+(?:\.\d+)+)\s+(.+)$")
 
 
@@ -36,15 +36,13 @@ class NormIndexBuilder:
             if not line:
                 continue
 
-            heading_match = HEADING_PATTERN.match(line)
-            if heading_match:
-                label = heading_match.group(2)
-                title = heading_match.group(3)
-                parent_label = None
-                node_type = "chapter"
-                if "." in label:
-                    parent_label = label.split(".")[0]
-                    node_type = "section"
+            if line.startswith("#"):
+                heading_text = line.lstrip("#").strip()
+                heading_data = parse_heading_text(heading_text)
+            else:
+                heading_data = None
+            if heading_data is not None:
+                label, title, node_type, parent_label = heading_data
 
                 page_start, page_end = self._page_locator.locate(
                     label=label,
@@ -65,7 +63,7 @@ class NormIndexBuilder:
                     )
                 )
                 known_labels.add(label)
-                current_heading = label
+                current_heading = label if node_type in {"chapter", "section"} else None
                 continue
 
             clause_match = CLAUSE_PATTERN.match(line)
@@ -108,6 +106,7 @@ class NormIndexBuilder:
             entry.page_start = page_start
             entry.page_end = page_end
 
+        entries.sort(key=lambda entry: label_sort_key(entry.label))
         entry_dicts = [entry.model_dump() for entry in entries]
         tree = self._build_tree(entry_dicts)
         return {"entries": entry_dicts, "tree": tree}

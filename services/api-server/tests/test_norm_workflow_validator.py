@@ -88,3 +88,87 @@ def test_norm_workflow_validator_rejects_commentary_mapping_unknown_clause():
     )
     assert result["ok"] is False
     assert "Commentary references unknown clause: 9.9.9" in result["errors"]
+
+
+def test_norm_workflow_validator_rejects_commentary_without_clause_level_mapping():
+    result = NormWorkflowValidator().validate(
+        clause_index={
+            "entries": [
+                {"label": "1", "node_type": "chapter", "parent_label": None},
+                {"label": "1.1", "node_type": "section", "parent_label": "1"},
+                {"label": "1.1.1", "node_type": "clause", "parent_label": "1.1"},
+            ],
+            "tree": [
+                {
+                    "label": "1",
+                    "children": [
+                        {"label": "1.1", "children": [{"label": "1.1.1", "children": []}]}
+                    ],
+                }
+            ],
+        },
+        commentary_result={
+            "entries": [
+                {
+                    "label": "1",
+                    "node_type": "chapter",
+                    "parent_label": None,
+                    "commentary_text": "",
+                },
+                {
+                    "label": "1.1",
+                    "node_type": "section",
+                    "parent_label": "1",
+                    "commentary_text": "",
+                },
+            ],
+            "commentary_map": {},
+        },
+        expected_chapters=["1"],
+        expected_sections=["1.1"],
+    )
+
+    assert result["ok"] is False
+    assert any("clause-level commentary nodes" in item for item in result["errors"])
+
+
+def test_norm_workflow_validator_rejects_duplicate_labels_and_invalid_page_ranges():
+    result = NormWorkflowValidator().validate(
+        clause_index={
+            "entries": [
+                {
+                    "label": "4.2.1",
+                    "node_type": "clause",
+                    "parent_label": "4.2",
+                    "page_start": 12,
+                    "page_end": 11,
+                },
+                {
+                    "label": "4.2.1",
+                    "node_type": "clause",
+                    "parent_label": "4.2",
+                    "page_start": 12,
+                    "page_end": 12,
+                },
+            ],
+            "tree": [{"label": "4.2.1", "children": []}],
+        },
+        commentary_result={
+            "entries": [
+                {
+                    "label": "4.2.1",
+                    "node_type": "clause",
+                    "parent_label": "4.2",
+                    "page_start": 30,
+                    "page_end": 29,
+                    "commentary_text": "Commentary text",
+                }
+            ],
+            "commentary_map": {"4.2.1": "Commentary text"},
+        },
+    )
+
+    assert result["ok"] is False
+    assert any("Duplicate clause labels" in item for item in result["errors"])
+    assert any("Invalid clause page range" in item for item in result["errors"])
+    assert any("Invalid commentary page range" in item for item in result["errors"])

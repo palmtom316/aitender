@@ -1,5 +1,6 @@
 from io import BytesIO
 from pathlib import Path
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,7 +9,6 @@ from app.main import app
 from app.services.audit_service import audit_service
 from app.services.document_service import document_service
 from app.services.ocr_dispatcher import ocr_dispatcher
-from app.workers.process_norm_document import process_norm_document
 
 
 class FakeSuccessAdapter:
@@ -67,21 +67,22 @@ def test_norm_pipeline_e2e_from_upload_to_searchable_result():
     assert upload.status_code == 201
     payload = upload.json()
     document_id = payload["document"]["id"]
-    artifact_path = Path(payload["artifact"]["storage_path"])
+    job_id = payload["document"]["latest_job_id"]
+    assert payload["document"]["status"] == "processing"
+    assert job_id is not None
 
-    job, raw_result = process_norm_document(
-        document_id=document_id,
-        document_path=artifact_path,
-        provider_name="mineru",
-    )
-    assert raw_result is not None
+    for _ in range(20):
+        status = client.get(f"/jobs/{job_id}")
+        assert status.status_code == 200
+        if status.json()["job"]["status"] == "completed":
+            break
+        time.sleep(0.05)
+    else:
+        raise AssertionError("background norm processing did not complete in time")
 
-    search = client.post(
-        "/norm-search/query",
-        json={
-            "document_id": document_id,
-            "query": "implementation scope",
-        },
+    search = client.get(
+        f"/projects/project-alpha/norm-library/documents/{document_id}/search?query=implementation%20scope",
+        headers={"Authorization": "Bearer auth-token-pm"},
     )
 
     assert search.status_code == 200
@@ -98,8 +99,9 @@ def test_norm_pipeline_e2e_from_upload_to_searchable_result():
             "tags": [],
         }
     ]
+    assert search.json()["commentary_items"] == []
 
-    status = client.get(f"/jobs/{job.id}")
+    status = client.get(f"/jobs/{job_id}")
     assert status.status_code == 200
     assert status.json()["job"]["status"] == "completed"
     assert document_service.get_document(document_id).status == "indexed"

@@ -49,6 +49,22 @@ class OCRDispatcher:
     def get_job(self, job_id: str) -> NormProcessingJob | None:
         return self._repository.get_job(job_id)
 
+    def create_job(
+        self,
+        *,
+        document_id: str,
+        provider_name: str,
+        status: NormProcessingJobStatus = NormProcessingJobStatus.PENDING,
+    ) -> NormProcessingJob:
+        job = NormProcessingJob(
+            id=self._repository.next_job_id(),
+            document_id=document_id,
+            provider_name=provider_name,
+            status=status,
+        )
+        self._repository.save_job(job)
+        return job
+
     def mark_job_status(
         self,
         job: NormProcessingJob,
@@ -83,13 +99,23 @@ class OCRDispatcher:
         document_path: Path,
         provider_name: str,
         extract_override: Callable[[Path], dict] | None = None,
+        existing_job_id: str | None = None,
     ) -> tuple[NormProcessingJob, dict | None]:
-        job = NormProcessingJob(
-            id=self._repository.next_job_id(),
-            document_id=document_id,
-            provider_name=provider_name,
-            status=NormProcessingJobStatus.RUNNING,
+        job = (
+            self._repository.get_job(existing_job_id)
+            if existing_job_id is not None
+            else None
         )
+        if job is None:
+            job = self.create_job(
+                document_id=document_id,
+                provider_name=provider_name,
+                status=NormProcessingJobStatus.RUNNING,
+            )
+        else:
+            job.provider_name = provider_name
+            job.status = NormProcessingJobStatus.RUNNING
+            job.error_message = None
         self._repository.save_job(job)
         self._audit.record(
             job_id=job.id,
@@ -133,10 +159,6 @@ class OCRDispatcher:
             )
             return job, None
 
-        self.mark_job_status(
-            job,
-            status=NormProcessingJobStatus.COMPLETED,
-        )
         self._audit.record(
             job_id=job.id,
             step="ocr_completed",

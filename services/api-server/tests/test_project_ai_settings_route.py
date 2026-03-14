@@ -46,3 +46,24 @@ def test_project_ai_settings_route_reads_and_writes_project_config(tmp_path):
         assert update.json()["analysis"]["model"] == "deepseek-chat"
     finally:
         app.dependency_overrides.clear()
+
+
+def test_project_ai_settings_route_accepts_cors_preflight(tmp_path):
+    service = ProjectAiSettingsService(state_path=tmp_path / "project-ai-settings.json")
+    client = TestClient(app)
+    app.dependency_overrides[get_project_ai_settings_service] = lambda: service
+
+    try:
+        response = client.options(
+            "/projects/project-alpha/settings/ai",
+            headers={
+                "Origin": "http://localhost:3011",
+                "Access-Control-Request-Method": "PUT",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == "http://localhost:3011"
+    finally:
+        app.dependency_overrides.clear()

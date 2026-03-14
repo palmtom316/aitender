@@ -93,7 +93,7 @@ def test_norm_pipeline_e2e_from_upload_to_searchable_result():
             "page_end": 1,
             "summary_text": "Scope clause text that explains the implementation scope.",
             "commentary_summary": "",
-            "content_preview": "",
+            "content_preview": "1.1.1 Scope clause text that explains the implementation scope.",
             "path_labels": ["1", "1.1", "1.1.1"],
             "tags": [],
         }

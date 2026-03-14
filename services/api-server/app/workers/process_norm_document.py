@@ -98,6 +98,10 @@ def process_norm_document(
                     markdown_text=segments.body_markdown or normalized.markdown_text,
                     page_texts=body_page_texts,
                 )
+                _populate_content_previews(
+                    clause_index=baseline_clause_index,
+                    page_texts=body_page_texts,
+                )
                 baseline_commentary_result = (
                     NormCommentaryBuilder().build(
                         document_id=document_id,
@@ -315,3 +319,46 @@ def _slice_page_texts_for_body_and_commentary(
         ]
 
     return body_pages, commentary_pages
+
+
+def _populate_content_previews(*, clause_index: dict, page_texts: list[dict]) -> None:
+    import re
+
+    page_by_number = {
+        int(item.get("page")): str(item.get("text", ""))
+        for item in page_texts
+        if "page" in item
+    }
+    next_label_pattern = re.compile(r"\d+(?:\.\d+)+")
+
+    for entry in clause_index.get("entries", []):
+        if entry.get("node_type") != "clause":
+            continue
+        if entry.get("content_preview"):
+            continue
+
+        label = str(entry.get("label", "")).strip()
+        page_start = entry.get("page_start")
+        if not label or not isinstance(page_start, int):
+            continue
+
+        text = page_by_number.get(page_start, "")
+        if not text:
+            continue
+
+        idx = text.find(label)
+        if idx == -1:
+            entry["content_preview"] = label
+            continue
+
+        end = min(len(text), idx + 800)
+        for match in next_label_pattern.finditer(text, idx + len(label)):
+            next_label = match.group(0)
+            if next_label != label:
+                end = match.start()
+                break
+
+        window = text[idx:end].strip()
+        if len(window) > 320:
+            window = window[:320].rstrip()
+        entry["content_preview"] = window

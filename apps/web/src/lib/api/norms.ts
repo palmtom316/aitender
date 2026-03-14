@@ -22,6 +22,7 @@ export type NormSearchResult = {
   pageEnd: number;
   summaryText: string;
   commentarySummary: string;
+  contentPreview: string;
   pathLabels: string[];
   tags: string[];
 };
@@ -73,6 +74,7 @@ type NormSearchResultApiResponse = {
   page_end: number;
   summary_text: string;
   commentary_summary: string;
+  content_preview?: string;
   path_labels: string[];
   tags?: string[];
 };
@@ -138,6 +140,7 @@ const MOCK_RESULTS: NormSearchResult[] = [
     pageEnd: 1,
     summaryText: "General clause text for the project.",
     commentarySummary: "Commentary for the general clause.",
+    contentPreview: "1.0.1 General clause text for the project.",
     pathLabels: ["1", "1.0.1"],
     tags: []
   },
@@ -148,6 +151,7 @@ const MOCK_RESULTS: NormSearchResult[] = [
     pageEnd: 2,
     summaryText: "Scope clause text that explains the implementation scope.",
     commentarySummary: "Commentary for the scope clause.",
+    contentPreview: "1.1.1 Scope clause text that explains the implementation scope.",
     pathLabels: ["1", "1.1", "1.1.1"],
     tags: ["mandatory"]
   },
@@ -158,6 +162,7 @@ const MOCK_RESULTS: NormSearchResult[] = [
     pageEnd: 3,
     summaryText: "Safety clause text for on-site execution.",
     commentarySummary: "Commentary for the safety clause.",
+    contentPreview: "2.0.1 Safety clause text for on-site execution.",
     pathLabels: ["2", "2.0.1"],
     tags: []
   }
@@ -213,6 +218,7 @@ function mapSearchResult(
     pageEnd: payload.page_end,
     summaryText: payload.summary_text,
     commentarySummary: payload.commentary_summary,
+    contentPreview: payload.content_preview ?? "",
     pathLabels: payload.path_labels,
     tags: payload.tags ?? []
   };

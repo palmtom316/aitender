@@ -59,7 +59,7 @@ export function NormSearchPanel({
           selectedLabel={selectedResult?.label ?? null}
         />
         <NormTree nodes={tree} selectedLabel={selectedResult?.label ?? null} />
-        <NormDetailPanel result={selectedResult} />
+        <NormDetailPanel result={selectedResult} query={query} />
         <NormHighlightViewer query={query} result={selectedResult} />
       </div>
     </section>

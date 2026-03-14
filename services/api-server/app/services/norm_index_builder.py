@@ -1,7 +1,8 @@
 import re
 
 from app.models.norm_clause_entry import NormClauseEntry
-from app.services.norm_page_locator import NormPageLocator
+from app.services.norm_markdown_splitter import NormMarkdownSplitter
+from app.services.norm_page_locator import NormLocateRequest, NormPageLocator
 from app.services.norm_summary_builder import NormSummaryBuilder
 
 
@@ -13,6 +14,7 @@ class NormIndexBuilder:
     def __init__(self) -> None:
         self._page_locator = NormPageLocator()
         self._summary_builder = NormSummaryBuilder()
+        self._splitter = NormMarkdownSplitter()
 
     def build(
         self,
@@ -25,7 +27,11 @@ class NormIndexBuilder:
         current_heading: str | None = None
         known_labels: set[str] = set()
 
-        for raw_line in markdown_text.splitlines():
+        # Avoid TOC noise and anything after 修订说明 by default.
+        segments = self._splitter.split(markdown_text)
+        body_markdown = segments.body_markdown or markdown_text
+
+        for raw_line in body_markdown.splitlines():
             line = raw_line.strip()
             if not line:
                 continue
@@ -87,6 +93,20 @@ class NormIndexBuilder:
                     tags=[],
                 )
             )
+
+        # Assign page ranges in-order for more stable page_end inference.
+        locate_requests = [
+            NormLocateRequest(label=entry.label, title=entry.title)
+            for entry in entries
+        ]
+        ranges = self._page_locator.locate_many(
+            requests=locate_requests,
+            page_texts=page_texts,
+        )
+        for entry in entries:
+            page_start, page_end = ranges.get(entry.label, (entry.page_start, entry.page_end))
+            entry.page_start = page_start
+            entry.page_end = page_end
 
         entry_dicts = [entry.model_dump() for entry in entries]
         tree = self._build_tree(entry_dicts)
